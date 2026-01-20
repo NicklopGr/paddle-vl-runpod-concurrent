@@ -11,7 +11,7 @@ FROM runpod/pytorch:2.2.0-py3.10-cuda12.1.1-devel-ubuntu22.04
 
 WORKDIR /app
 
-# Install system dependencies
+# Install system dependencies including build tools for flash-attn
 RUN apt-get update && apt-get install -y \
     libgl1-mesa-glx \
     libglib2.0-0 \
@@ -20,19 +20,22 @@ RUN apt-get update && apt-get install -y \
     libxrender-dev \
     libgomp1 \
     wget \
+    git \
+    ninja-build \
     && rm -rf /var/lib/apt/lists/*
 
-# Upgrade pip
-RUN pip install --upgrade pip
+# Upgrade pip and install build dependencies
+RUN pip install --upgrade pip setuptools wheel packaging ninja
 
 # Install PaddlePaddle GPU with CUDA 12.x support
 # PaddlePaddle 3.x is required for PaddleOCR-VL
 RUN pip install paddlepaddle-gpu==3.0.0b2 -i https://www.paddlepaddle.org.cn/packages/stable/cu123/
 
-# Install Flash Attention 2 for memory efficiency (optional)
+# Install Flash Attention 2 for memory efficiency
 # This reduces VRAM from 40GB to ~3GB
-# If it fails, the model will still work but use more VRAM
-RUN pip install flash-attn --no-build-isolation || echo "Flash Attention 2 not installed - will use more VRAM"
+# Using MAX_JOBS=4 to prevent OOM during compilation
+ENV MAX_JOBS=4
+RUN pip install flash-attn --no-build-isolation
 
 # Install PaddleOCR with doc-parser (includes VL model)
 # The [doc-parser] extra includes all required models for document parsing

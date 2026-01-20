@@ -1,0 +1,19 @@
+# PaddleOCR-VL RunPod Worker Dependencies
+# For use with PaddlePaddle 3.x and CUDA 12.x
+
+# RunPod SDK for serverless deployment
+runpod>=1.6.0
+
+# PaddlePaddle GPU with CUDA 12.x support
+# Install separately: pip install paddlepaddle-gpu==3.0.0b2 -i https://www.paddlepaddle.org.cn/packages/stable/cu123/
+# paddlepaddle-gpu==3.0.0b2
+
+# PaddleOCR with document parser (includes VL model)
+paddleocr[doc-parser]>=3.1.0
+
+# Flash Attention 2 for memory efficiency (reduces VRAM from 40GB to ~3GB)
+# Install separately: pip install flash-attn --no-build-isolation
+# flash-attn
+
+# Image processing
+Pillow>=9.0.0

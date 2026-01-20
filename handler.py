@@ -47,6 +47,29 @@ import io
 # Global pipeline - loaded once at container startup
 paddle_vl_pipeline = None
 
+# Network volume path for model caching (RunPod mounts at /runpod-volume)
+NETWORK_VOLUME_PATH = "/runpod-volume"
+MODEL_CACHE_DIR = os.path.join(NETWORK_VOLUME_PATH, "paddle_models")
+
+
+def setup_model_cache():
+    """Configure model cache directory for faster cold starts"""
+    # Check if network volume is mounted
+    if os.path.exists(NETWORK_VOLUME_PATH) and os.access(NETWORK_VOLUME_PATH, os.W_OK):
+        # Create cache directory if it doesn't exist
+        os.makedirs(MODEL_CACHE_DIR, exist_ok=True)
+
+        # Set PaddlePaddle and PaddleOCR cache directories
+        os.environ["PADDLE_HOME"] = MODEL_CACHE_DIR
+        os.environ["PADDLEOCR_HOME"] = MODEL_CACHE_DIR
+        os.environ["HF_HOME"] = os.path.join(MODEL_CACHE_DIR, "huggingface")
+
+        print(f"[PaddleOCR-VL] Using network volume cache: {MODEL_CACHE_DIR}")
+        return True
+    else:
+        print("[PaddleOCR-VL] No network volume found, using container storage")
+        return False
+
 
 def load_pipeline():
     """Load PaddleOCR-VL pipeline (runs once at container startup)"""
@@ -54,6 +77,9 @@ def load_pipeline():
 
     if paddle_vl_pipeline is not None:
         return paddle_vl_pipeline
+
+    # Setup model cache before loading
+    setup_model_cache()
 
     print("[PaddleOCR-VL] Loading pipeline...")
     start = time.time()

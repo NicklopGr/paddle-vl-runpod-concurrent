@@ -35,8 +35,12 @@ RUN pip install flash-attn --no-build-isolation
 
 # Install PaddlePaddle GPU with CUDA 12.x support
 # PaddlePaddle 3.x is required for PaddleOCR-VL
-# Note: This installs cuDNN 9.x but flash-attn is already compiled
+# Note: This installs cuDNN 9.x which breaks PyTorch
 RUN pip install paddlepaddle-gpu==3.0.0b2 -i https://www.paddlepaddle.org.cn/packages/stable/cu123/
+
+# Restore cuDNN 8 for PyTorch compatibility
+# PaddlePaddle installed cuDNN 9.x but PyTorch 2.2.0 requires cuDNN 8.x
+RUN pip install nvidia-cudnn-cu12==8.9.7.29 --force-reinstall
 
 # Install PaddleOCR with doc-parser (includes VL model)
 # The [doc-parser] extra includes all required models for document parsing

@@ -38,13 +38,26 @@ RUN pip install flash-attn --no-build-isolation
 # Note: This installs cuDNN 9.x which breaks PyTorch
 RUN pip install paddlepaddle-gpu==3.0.0b2 -i https://www.paddlepaddle.org.cn/packages/stable/cu123/
 
-# Restore cuDNN 8 for PyTorch compatibility
-# PaddlePaddle installed cuDNN 9.x but PyTorch 2.2.0 requires cuDNN 8.x
-RUN pip install nvidia-cudnn-cu12==8.9.7.29 --force-reinstall
-
 # Install PaddleOCR with doc-parser (includes VL model)
 # The [doc-parser] extra includes all required models for document parsing
 RUN pip install "paddleocr[doc-parser]>=3.1.0"
+
+# Fix NVIDIA library version conflicts
+# PaddlePaddle (cu123) installs CUDA 12.3/12.4 packages that conflict with
+# the base image's CUDA 12.1.1. Force reinstall all NVIDIA packages to
+# versions compatible with PyTorch 2.2.0 and CUDA 12.1
+RUN pip install \
+    nvidia-cuda-nvrtc-cu12==12.1.105 \
+    nvidia-cuda-runtime-cu12==12.1.105 \
+    nvidia-cublas-cu12==12.1.3.1 \
+    nvidia-cusparse-cu12==12.1.0.106 \
+    nvidia-cufft-cu12==11.0.2.54 \
+    nvidia-curand-cu12==10.3.2.106 \
+    nvidia-cusolver-cu12==11.4.5.107 \
+    nvidia-nccl-cu12==2.19.3 \
+    nvidia-nvjitlink-cu12==12.1.105 \
+    nvidia-cudnn-cu12==8.9.7.29 \
+    --force-reinstall
 
 # Install RunPod SDK
 RUN pip install runpod

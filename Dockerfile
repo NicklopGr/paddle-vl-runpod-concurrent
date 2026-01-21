@@ -30,7 +30,9 @@ RUN pip install --upgrade pip setuptools wheel packaging ninja
 # Install Flash Attention 2 FIRST (before PaddlePaddle overwrites cuDNN)
 # This reduces VRAM from 40GB to ~3GB
 # Using MAX_JOBS=4 to prevent OOM during compilation
+# Limit CUDA arch list to Ampere+ to speed flash-attn build
 ENV MAX_JOBS=4
+ENV TORCH_CUDA_ARCH_LIST="8.0;8.6;8.9"
 RUN pip install flash-attn --no-build-isolation
 
 # Install PaddlePaddle GPU with CUDA 12.x support

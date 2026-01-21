@@ -62,12 +62,8 @@ RUN pip install \
 # Install RunPod SDK
 RUN pip install runpod
 
-# Pre-download models at build time (faster cold starts)
-# This runs the pipeline once to trigger model downloads
-RUN python -c "from paddleocr import PaddleOCRVL; pipeline = PaddleOCRVL(); print('Models downloaded successfully')"
-
-# Copy handler
-COPY handler.py .
+# Copy handler and warmup helper (run warmup.py on a GPU pod to fill /runpod-volume cache)
+COPY handler.py warmup.py ./
 
 # Set environment variables for optimal performance
 ENV CUDA_VISIBLE_DEVICES=0

@@ -14,7 +14,9 @@ Input:
     "input": {
         "images_base64": ["base64_encoded_image_1", "base64_encoded_image_2", ...],
         // OR for single image:
-        "image_base64": "base64_encoded_image"
+        "image_base64": "base64_encoded_image",
+        // Optional: warmup-only request to pre-download models
+        "warmup": true
     }
 }
 
@@ -48,8 +50,11 @@ import io
 paddle_vl_pipeline = None
 
 # Network volume path for model caching (RunPod mounts at /runpod-volume)
-NETWORK_VOLUME_PATH = "/runpod-volume"
-MODEL_CACHE_DIR = os.path.join(NETWORK_VOLUME_PATH, "paddle_models")
+NETWORK_VOLUME_PATH = os.environ.get("RUNPOD_VOLUME_PATH", "/runpod-volume")
+MODEL_CACHE_DIR = os.environ.get(
+    "PADDLE_VL_CACHE_DIR",
+    os.path.join(NETWORK_VOLUME_PATH, "paddle_models"),
+)
 
 
 def setup_model_cache():
@@ -186,7 +191,18 @@ def handler(event):
 
     try:
         # Get input
-        job_input = event.get("input", {})
+        job_input = event.get("input", {}) or {}
+
+        # Warmup-only path (pre-download models into the cache volume)
+        if event.get("warmup") or job_input.get("warmup"):
+            load_pipeline()
+            return {
+                "status": "success",
+                "result": {
+                    "warmup": True,
+                    "cache_dir": MODEL_CACHE_DIR
+                }
+            }
 
         # Support both single image and multiple images
         images_base64 = job_input.get("images_base64", [])

@@ -28,7 +28,8 @@ Output:
             {
                 "page_number": 1,
                 "markdown": "# Document Title\n\n<table>...</table>\n\nParagraph text...",
-                "json": {...}  // Optional structured JSON output
+                "parsing_res_list": [...],  // Full structured parsing results
+                "json": {...}  // Full JSON output
             }
         ],
         "ocrProvider": "paddleocr-vl",
@@ -44,6 +45,7 @@ import os
 import time
 from PIL import Image
 import io
+import numpy as np
 
 
 # Global pipeline - loaded once at container startup
@@ -135,8 +137,26 @@ def resize_image_if_needed(image: Image.Image, max_dimension: int = 1920) -> Ima
     return image.resize((new_width, new_height), Image.Resampling.LANCZOS)
 
 
+def convert_to_serializable(obj):
+    """Convert numpy arrays and other non-serializable types to JSON-safe types"""
+    if isinstance(obj, np.ndarray):
+        return obj.tolist()
+    elif isinstance(obj, np.integer):
+        return int(obj)
+    elif isinstance(obj, np.floating):
+        return float(obj)
+    elif isinstance(obj, dict):
+        return {k: convert_to_serializable(v) for k, v in obj.items()}
+    elif isinstance(obj, list):
+        return [convert_to_serializable(i) for i in obj]
+    elif isinstance(obj, tuple):
+        return [convert_to_serializable(i) for i in obj]
+    else:
+        return obj
+
+
 def process_single_image(pipeline, image_base64: str, page_number: int) -> dict:
-    """Process a single image and return markdown + json output"""
+    """Process a single image and return markdown + structured output"""
 
     # Decode base64 image
     image_bytes = base64.b64decode(image_base64)
@@ -156,37 +176,68 @@ def process_single_image(pipeline, image_base64: str, page_number: int) -> dict:
 
     try:
         # Run PaddleOCR-VL document parsing
-        # predict() returns an iterator of result objects
+        # predict() returns an iterator/generator of result objects
         results = pipeline.predict(tmp_path)
 
         markdown_output = ""
+        parsing_res_list = []
         json_output = None
 
         # Iterate through results (usually one per image)
         for res in results:
-            # PaddleOCR 3.x: res.markdown is a dict with 'markdown_texts' key
-            md_info = getattr(res, 'markdown', None)
-            if md_info:
-                if isinstance(md_info, dict):
-                    # New API: dict with markdown_texts
-                    md_texts = md_info.get('markdown_texts', '')
-                    if isinstance(md_texts, list):
-                        markdown_output += '\n\n'.join(md_texts)
-                    else:
-                        markdown_output += str(md_texts) if md_texts else ''
-                elif isinstance(md_info, str):
-                    # Old API: direct string
-                    markdown_output += md_info
-                elif isinstance(md_info, list):
-                    markdown_output += '\n\n'.join(str(m) for m in md_info)
+            print(f"[PaddleOCR-VL] Result object type: {type(res)}")
+            print(f"[PaddleOCR-VL] Result attributes: {dir(res)}")
 
-            # Try to get JSON output
-            if hasattr(res, 'json') and res.json:
-                json_output = res.json
+            # Try to get markdown content
+            # PaddleOCR 3.x: res.markdown is a dict with 'markdown_texts' key
+            try:
+                md_info = res.markdown
+                print(f"[PaddleOCR-VL] markdown type: {type(md_info)}")
+                if md_info:
+                    if isinstance(md_info, dict):
+                        md_texts = md_info.get('markdown_texts', '')
+                        print(f"[PaddleOCR-VL] markdown_texts type: {type(md_texts)}")
+                        if isinstance(md_texts, str):
+                            markdown_output += md_texts
+                        elif isinstance(md_texts, list):
+                            markdown_output += '\n\n'.join(str(t) for t in md_texts)
+                    elif isinstance(md_info, str):
+                        markdown_output += md_info
+            except Exception as e:
+                print(f"[PaddleOCR-VL] Error accessing markdown: {e}")
+
+            # Try to get JSON/parsing_res_list
+            try:
+                json_data = res.json
+                print(f"[PaddleOCR-VL] json type: {type(json_data)}")
+                if json_data:
+                    json_output = convert_to_serializable(json_data)
+                    # Extract parsing_res_list from json
+                    if isinstance(json_data, dict) and 'parsing_res_list' in json_data:
+                        parsing_res_list = convert_to_serializable(json_data['parsing_res_list'])
+                        print(f"[PaddleOCR-VL] Found {len(parsing_res_list)} blocks in parsing_res_list")
+            except Exception as e:
+                print(f"[PaddleOCR-VL] Error accessing json: {e}")
+
+            # If no markdown but we have parsing_res_list, build markdown from blocks
+            if not markdown_output and parsing_res_list:
+                print("[PaddleOCR-VL] Building markdown from parsing_res_list")
+                for block in parsing_res_list:
+                    label = block.get('block_label', '')
+                    content = block.get('block_content', '')
+                    if content:
+                        if label == 'table':
+                            markdown_output += f"\n\n{content}\n\n"
+                        else:
+                            markdown_output += f"\n{content}\n"
+
+        print(f"[PaddleOCR-VL] Final markdown length: {len(markdown_output)}")
+        print(f"[PaddleOCR-VL] Parsing blocks: {len(parsing_res_list)}")
 
         return {
             "page_number": page_number,
             "markdown": markdown_output.strip(),
+            "parsing_res_list": parsing_res_list,
             "json": json_output
         }
 

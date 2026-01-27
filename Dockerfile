@@ -46,9 +46,9 @@ RUN pip install paddlepaddle-gpu==3.0.0b2 -i https://www.paddlepaddle.org.cn/pac
 RUN pip install "paddleocr[doc-parser]>=3.1.0"
 
 # Fix NVIDIA library version conflicts
-# PaddlePaddle (cu123) installs CUDA 12.3/12.4 packages that conflict with
-# the base image's CUDA 12.1.1. Force reinstall all NVIDIA packages to
-# versions compatible with PyTorch 2.2.0 and CUDA 12.1
+# PaddlePaddle 3.0 requires cuDNN 9.x - do NOT downgrade to cuDNN 8.x
+# Only reinstall CUDA runtime libraries to match base image (12.1)
+# but keep cuDNN 9 that PaddlePaddle installed
 RUN pip install \
     nvidia-cuda-nvrtc-cu12==12.1.105 \
     nvidia-cuda-runtime-cu12==12.1.105 \
@@ -59,8 +59,11 @@ RUN pip install \
     nvidia-cusolver-cu12==11.4.5.107 \
     nvidia-nccl-cu12==2.19.3 \
     nvidia-nvjitlink-cu12==12.1.105 \
-    nvidia-cudnn-cu12==8.9.7.29 \
     --force-reinstall
+
+# Ensure cuDNN 9 is available (PaddlePaddle 3.0 requirement)
+# This installs the proper libcudnn.so.9 that PaddlePaddle needs
+RUN pip install nvidia-cudnn-cu12==9.1.0.70 --force-reinstall
 
 # Install RunPod SDK
 RUN pip install runpod

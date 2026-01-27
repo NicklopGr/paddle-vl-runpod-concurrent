@@ -156,20 +156,37 @@ def process_single_image(pipeline, image_base64: str, page_number: int) -> dict:
 
     try:
         # Run PaddleOCR-VL document parsing
-        result = pipeline.predict(tmp_path)
+        # predict() returns an iterator of result objects
+        results = pipeline.predict(tmp_path)
 
-        # Extract markdown and structured output
-        # The result object has .markdown property containing the structured output
-        markdown_output = getattr(result, 'markdown', None)
-        json_output = getattr(result, 'json', None)
+        markdown_output = ""
+        json_output = None
 
-        # If markdown is a list, join pages
-        if isinstance(markdown_output, list):
-            markdown_output = '\n\n'.join(markdown_output)
+        # Iterate through results (usually one per image)
+        for res in results:
+            # PaddleOCR 3.x: res.markdown is a dict with 'markdown_texts' key
+            md_info = getattr(res, 'markdown', None)
+            if md_info:
+                if isinstance(md_info, dict):
+                    # New API: dict with markdown_texts
+                    md_texts = md_info.get('markdown_texts', '')
+                    if isinstance(md_texts, list):
+                        markdown_output += '\n\n'.join(md_texts)
+                    else:
+                        markdown_output += str(md_texts) if md_texts else ''
+                elif isinstance(md_info, str):
+                    # Old API: direct string
+                    markdown_output += md_info
+                elif isinstance(md_info, list):
+                    markdown_output += '\n\n'.join(str(m) for m in md_info)
+
+            # Try to get JSON output
+            if hasattr(res, 'json') and res.json:
+                json_output = res.json
 
         return {
             "page_number": page_number,
-            "markdown": markdown_output or "",
+            "markdown": markdown_output.strip(),
             "json": json_output
         }
 

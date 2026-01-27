@@ -1,6 +1,6 @@
 # PaddleOCR-VL RunPod Serverless Container
 #
-# Uses official PaddlePaddle image with CUDA 12.6 + cuDNN 9.5
+# Uses official PaddlePaddle 3.2.0 image with CUDA 12.6 + cuDNN 9.5
 # This ensures all CUDA/cuDNN dependencies are properly configured.
 #
 # Hardware Requirements:
@@ -10,7 +10,7 @@
 #
 # GPU Driver Requirements: >= 550.54.14 (Linux)
 
-FROM paddlepaddle/paddle:3.0.0-gpu-cuda12.6-cudnn9.5-trt10.5
+FROM paddlepaddle/paddle:3.2.0-gpu-cuda12.6-cudnn9.5
 
 WORKDIR /app
 

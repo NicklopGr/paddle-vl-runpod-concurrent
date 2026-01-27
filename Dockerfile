@@ -1,7 +1,7 @@
 # PaddleOCR-VL RunPod Serverless Container
 #
-# Uses official PaddlePaddle 3.2.0 image with CUDA 12.6 + cuDNN 9.5
-# This ensures all CUDA/cuDNN dependencies are properly configured.
+# Uses official PaddlePaddle 3.2.2 image with CUDA 12.6 + cuDNN 9.5
+# PaddleOCR 3.3.3 (latest as of Jan 26, 2026)
 #
 # Hardware Requirements:
 # - GPU with compute capability >= 7.0 (Volta or newer)
@@ -10,7 +10,7 @@
 #
 # GPU Driver Requirements: >= 550.54.14 (Linux)
 
-FROM paddlepaddle/paddle:3.2.0-gpu-cuda12.6-cudnn9.5
+FROM paddlepaddle/paddle:3.2.2-gpu-cuda12.6-cudnn9.5
 
 WORKDIR /app
 
@@ -28,10 +28,10 @@ RUN apt-get update && apt-get install -y \
 # Upgrade pip
 RUN pip install --upgrade pip setuptools wheel
 
-# Install PaddleOCR with doc-parser (includes VL model)
+# Install PaddleOCR 3.3.3 with doc-parser (includes VL model)
 # This provides PaddleOCR-VL document parsing capabilities
 # --ignore-installed needed because base image has distutils-installed PyYAML
-RUN pip install --ignore-installed "paddleocr[doc-parser]>=3.1.0"
+RUN pip install --ignore-installed "paddleocr[doc-parser]==3.3.3"
 
 # Install RunPod SDK
 RUN pip install runpod

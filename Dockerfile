@@ -30,7 +30,8 @@ RUN pip install --upgrade pip setuptools wheel
 
 # Install PaddleOCR with doc-parser (includes VL model)
 # This provides PaddleOCR-VL document parsing capabilities
-RUN pip install "paddleocr[doc-parser]>=3.1.0"
+# --ignore-installed needed because base image has distutils-installed PyYAML
+RUN pip install --ignore-installed "paddleocr[doc-parser]>=3.1.0"
 
 # Install RunPod SDK
 RUN pip install runpod

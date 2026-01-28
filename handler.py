@@ -45,10 +45,22 @@ import base64
 import tempfile
 import os
 import time
+import warnings
 from PIL import Image
 import io
 import numpy as np
 
+# ============================================================================
+# PERFORMANCE OPTIMIZATIONS - Set before any PaddlePaddle imports
+# ============================================================================
+
+# Skip model verification on startup (models already cached and verified)
+os.environ["PADDLEX_SKIP_MODEL_CHECK"] = "1"
+
+# Suppress PaddlePaddle API compatibility warnings (torch.split differences)
+# These are benign warnings about PyTorch vs PaddlePaddle API differences
+warnings.filterwarnings("ignore", message=".*Non compatible API.*")
+warnings.filterwarnings("ignore", category=Warning, module="paddle.utils.decorator_utils")
 
 # Global pipeline - loaded once at container startup
 paddle_vl_pipeline = None

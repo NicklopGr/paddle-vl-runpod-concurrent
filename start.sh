@@ -1,15 +1,17 @@
 #!/bin/bash
 set -e
 
+export VLLM_DISABLE_MODEL_SOURCE_CHECK=1
+
 # Start vLLM server directly (serves PaddleOCR-VL via OpenAI-compatible API)
 # Per: https://docs.vllm.ai/projects/recipes/en/latest/PaddlePaddle/PaddleOCR-VL.html
 vllm serve PaddlePaddle/PaddleOCR-VL \
-  --trust-remote-code \
   --host 0.0.0.0 \
   --port 8080 \
   --max-num-batched-tokens 16384 \
   --no-enable-prefix-caching \
-  --mm-processor-cache-gb 0 &
+  --mm-processor-cache-gb 0 \
+  --mm-processor-kwargs '{"use_fast": true}' &
 VLM_PID=$!
 
 # Wait for vLLM to be healthy

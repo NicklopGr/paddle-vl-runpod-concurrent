@@ -7,16 +7,35 @@
 #     2. Crops → vLLM server at localhost:8080 (batched)
 #     3. Post-processing → markdown
 #
-# Base image includes: vLLM + PaddleOCR-VL-0.9B model + paddleocr genai_server
+# Strategy: PaddlePaddle base (known working) + install vLLM on top
+# Avoids torch/NCCL conflicts from using the Baidu vLLM server image
 
-FROM ccr-2vdh3abv-pub.cnc.bj.baidubce.com/paddlepaddle/paddlex-genai-vllm-server:latest
+FROM paddlepaddle/paddle:3.2.2-gpu-cuda12.6-cudnn9.5
 
-USER root
 WORKDIR /app
 
-# Install PaddlePaddle GPU for layout detection (PP-DocLayoutV2)
-RUN pip install paddlepaddle-gpu==3.2.1 -i https://www.paddlepaddle.org.cn/packages/stable/cu126/
-RUN pip install --ignore-installed "paddleocr[doc-parser]>=3.3.2,<3.4"
+# Install system dependencies
+RUN apt-get update && apt-get install -y \
+    libgl1-mesa-glx \
+    libglib2.0-0 \
+    libsm6 \
+    libxext6 \
+    libxrender-dev \
+    libgomp1 \
+    poppler-utils \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
+
+# Upgrade pip
+RUN pip install --upgrade pip setuptools wheel
+
+# Install PaddleOCR with doc-parser (includes VL model + genai_server)
+RUN pip install --ignore-installed "paddleocr[doc-parser]==3.3.3"
+
+# Install vLLM (required by paddleocr genai_server --backend vllm)
+RUN pip install vllm
+
+# Install RunPod SDK
 RUN pip install runpod requests
 
 # Pre-download layout model so cold start doesn't fetch it
@@ -27,6 +46,8 @@ COPY handler.py /app/
 COPY start.sh /app/
 RUN chmod +x /app/start.sh
 
+ENV CUDA_VISIBLE_DEVICES=0
+ENV PADDLE_INFERENCE_MEMORY_OPTIM=1
 ENV PYTHONUNBUFFERED=1
 ENV RUNPOD_DEBUG_LEVEL=INFO
 

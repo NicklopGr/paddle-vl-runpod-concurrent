@@ -33,8 +33,8 @@ RUN pip install --upgrade pip setuptools wheel
 RUN pip install --ignore-installed "paddleocr[doc-parser]==3.3.3"
 
 # Install prebuilt flash-attn wheel FIRST (avoids nvcc compilation during build)
-# Python 3.10, CUDA 12.6, torch 2.8
-RUN pip install https://github.com/mjun0812/flash-attention-prebuild-wheels/releases/download/v0.3.14/flash_attn-2.8.2+cu126torch2.8-cp310-cp310-linux_x86_64.whl
+# Python 3.10, CUDA 12.4 (forward-compatible with 12.6 runtime), torch 2.8
+RUN pip install https://github.com/mjun0812/flash-attention-prebuild-wheels/releases/download/v0.3.14/flash_attn-2.8.2%2Bcu124torch2.8-cp310-cp310-linux_x86_64.whl
 
 # Now install genai_server dependencies (vLLM) - flash-attn already satisfied
 RUN paddleocr install_genai_server_deps vllm

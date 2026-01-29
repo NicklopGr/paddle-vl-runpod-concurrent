@@ -34,10 +34,9 @@ RUN pip install --upgrade pip setuptools wheel
 # Install PaddleOCR with doc-parser (pipeline client for layout detection + post-processing)
 RUN pip install --ignore-installed "paddleocr[doc-parser]==3.3.3"
 
-# Install prebuilt flash-attn (avoids nvcc compilation - no GPU in build environment)
-RUN pip install https://github.com/mjun0812/flash-attention-prebuild-wheels/releases/download/v0.3.14/flash_attn-2.8.2%2Bcu124torch2.8-cp310-cp310-linux_x86_64.whl
-
-# Install vLLM directly (serves PaddleOCR-VL model via OpenAI-compatible API)
+# Install vLLM (includes compatible flash-attn as dependency)
+# Do NOT install flash-attn separately - ABI mismatch with vLLM's torch causes
+# "undefined symbol: _ZNK3c106SymInt6sym_neERKS0_" at runtime
 RUN pip install vllm
 
 # Install RunPod SDK

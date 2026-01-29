@@ -1,52 +1,33 @@
-# PaddleOCR-VL RunPod Serverless Container (Concurrent Version)
+# PaddleOCR-VL RunPod Serverless Container (vLLM Backend)
 #
-# Same as paddle-vl-runpod but with concurrency_modifier for in-handler concurrency.
-# Multiple jobs can run simultaneously on the same GPU worker.
+# Architecture:
+#   paddleocr genai_server (vLLM, port 8080) - VLM inference with continuous batching
+#   handler.py (RunPod serverless) - uses PaddleOCRVL pipeline client:
+#     1. PP-DocLayoutV2 layout detection (CPU, fast)
+#     2. Crops → vLLM server at localhost:8080 (batched)
+#     3. Post-processing → markdown
 #
-# Uses official PaddlePaddle 3.2.2 image with CUDA 12.6 + cuDNN 9.5
-# PaddleOCR 3.3.3 (latest as of Jan 26, 2026)
-#
-# Hardware Requirements:
-# - GPU with compute capability >= 7.0 (Volta or newer)
-# - Recommended: Ampere+ (RTX 30xx, A10G, A100, etc.)
-# - VRAM: ~3-4 GB with Flash Attention, ~40 GB without
-#
-# GPU Driver Requirements: >= 550.54.14 (Linux)
+# Base image includes: vLLM + PaddleOCR-VL-0.9B model + paddleocr genai_server
 
-FROM paddlepaddle/paddle:3.2.2-gpu-cuda12.6-cudnn9.5
+FROM ccr-2vdh3abv-pub.cnc.bj.baidubce.com/paddlepaddle/paddlex-genai-vllm-server:latest
 
+USER root
 WORKDIR /app
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    libgl1-mesa-glx \
-    libglib2.0-0 \
-    libsm6 \
-    libxext6 \
-    libxrender-dev \
-    libgomp1 \
-    poppler-utils \
-    && rm -rf /var/lib/apt/lists/*
-
-# Upgrade pip
-RUN pip install --upgrade pip setuptools wheel
-
-# Install PaddleOCR 3.3.3 with doc-parser (includes VL model)
-RUN pip install --ignore-installed "paddleocr[doc-parser]==3.3.3"
-
-# Install RunPod SDK and requests (for URL downloading)
+# Install PaddlePaddle GPU for layout detection (PP-DocLayoutV2)
+RUN pip install paddlepaddle-gpu==3.2.1 -i https://www.paddlepaddle.org.cn/packages/stable/cu126/
+RUN pip install --ignore-installed "paddleocr[doc-parser]>=3.3.2,<3.4"
 RUN pip install runpod requests
 
-# Copy handler and warmup scripts
-COPY handler.py warmup.py ./
+# Pre-download layout model so cold start doesn't fetch it
+RUN python -c "from paddleocr import PaddleOCRVL; print('imports ok')" || true
 
-# Set environment variables for optimal performance
-ENV CUDA_VISIBLE_DEVICES=0
-ENV PADDLE_INFERENCE_MEMORY_OPTIM=1
+COPY pipeline_config_vllm.yaml /app/
+COPY handler.py /app/
+COPY start.sh /app/
+RUN chmod +x /app/start.sh
 
-# Default: serialize pipeline.predict() calls (safe default)
-# Set to "false" if you confirm pipeline is thread-safe
-ENV PADDLE_VL_SERIALIZE=true
+ENV PYTHONUNBUFFERED=1
+ENV RUNPOD_DEBUG_LEVEL=INFO
 
-# RunPod serverless entrypoint
-CMD ["python", "-u", "handler.py"]
+CMD ["bash", "start.sh"]

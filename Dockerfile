@@ -37,6 +37,9 @@ RUN pip install --ignore-installed "paddleocr[doc-parser]==3.3.3"
 # Python 3.10, CUDA 12.4 (forward-compatible with 12.6 runtime), torch 2.8
 RUN pip install https://github.com/mjun0812/flash-attention-prebuild-wheels/releases/download/v0.3.14/flash_attn-2.8.2%2Bcu124torch2.8-cp310-cp310-linux_x86_64.whl
 
+# git is required by vLLM's pip install (separate layer to bust cache)
+RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
+
 # Now install genai_server dependencies (vLLM) - flash-attn already satisfied
 RUN paddleocr install_genai_server_deps vllm
 

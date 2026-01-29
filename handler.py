@@ -41,7 +41,7 @@ import io
 import numpy as np
 
 # ============================================================================
-# PERFORMANCE OPTIMIZATIONS
+# PERFORMANCE OPTIMIZATIONS (vLLM backend v2)
 # ============================================================================
 
 os.environ["PADDLEX_SKIP_MODEL_CHECK"] = "1"

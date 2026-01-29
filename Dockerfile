@@ -24,6 +24,7 @@ RUN apt-get update && apt-get install -y \
     libgomp1 \
     poppler-utils \
     curl \
+    git \
     && rm -rf /var/lib/apt/lists/*
 
 # Upgrade pip

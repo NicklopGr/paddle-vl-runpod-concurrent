@@ -1,51 +1,46 @@
 """
-PaddleOCR-VL RunPod Serverless Handler
+PaddleOCR-VL RunPod Serverless Handler (Concurrent Version)
 
-This handler processes bank statement images using PaddleOCR-VL's document parsing pipeline,
-which produces structured markdown output with HTML tables.
+Same pipeline as paddle-vl-runpod but with in-handler concurrency support.
+Multiple jobs can run simultaneously on the same GPU worker.
 
-Pipeline:
-1. PP-DocLayoutV2 (Layout Analysis) - Detects 25 element categories with reading order
-2. PaddleOCR-VL-0.9B (Vision-Language Recognition) - Recognizes text, tables, formulas
-3. Post-processing - Outputs structured markdown with HTML tables
+Key differences from original:
+- async def handler() instead of sync
+- concurrency_modifier returns 20 (model uses ~8GB of 48GB GPU)
+- Accepts image_urls[] in addition to images_base64[] (eliminates 9MB body limit)
+- Optional asyncio.Lock for pipeline.predict() via PADDLE_VL_SERIALIZE env var
 
-Input:
+Input (URL mode - preferred):
 {
     "input": {
-        "images_base64": ["base64_encoded_image_1", "base64_encoded_image_2", ...],
-        // OR for single image:
-        "image_base64": "base64_encoded_image",
-        // Optional: skip handler-side resize (client handles sizing)
+        "image_urls": ["https://...", "https://...", ...],
+        // Optional: skip handler-side resize
         "skip_resize": false,
-        // Optional: warmup-only request to pre-download models
+        // Optional: warmup-only request
         "warmup": true
     }
 }
 
-Output:
+Input (base64 mode - backward compatible):
 {
-    "status": "success",
-    "result": {
-        "pages": [
-            {
-                "page_number": 1,
-                "markdown": "# Document Title\n\n<table>...</table>\n\nParagraph text...",
-                "parsing_res_list": [...],  // Full structured parsing results
-                "json": {...}  // Full JSON output
-            }
-        ],
-        "ocrProvider": "paddleocr-vl",
-        "processingTime": 1234
+    "input": {
+        "images_base64": ["base64_1", "base64_2", ...],
+        "image_base64": "base64_single",
+        "skip_resize": false
     }
 }
+
+Output: Same as original handler
 """
 
 import runpod
+import asyncio
 import base64
 import tempfile
 import os
 import time
 import warnings
+import requests
 from PIL import Image
 import io
 import numpy as np
@@ -54,18 +49,20 @@ import numpy as np
 # PERFORMANCE OPTIMIZATIONS - Set before any PaddlePaddle imports
 # ============================================================================
 
-# Skip model verification on startup (models already cached and verified)
 os.environ["PADDLEX_SKIP_MODEL_CHECK"] = "1"
 
-# Suppress PaddlePaddle API compatibility warnings (torch.split differences)
-# These are benign warnings about PyTorch vs PaddlePaddle API differences
 warnings.filterwarnings("ignore", message=".*Non compatible API.*")
 warnings.filterwarnings("ignore", category=Warning, module="paddle.utils.decorator_utils")
 
 # Global pipeline - loaded once at container startup
 paddle_vl_pipeline = None
 
-# Network volume path for model caching (RunPod mounts at /runpod-volume)
+# Optional serialization lock for pipeline.predict()
+# Enable with PADDLE_VL_SERIALIZE=true if pipeline isn't thread-safe
+_predict_lock: asyncio.Lock | None = None
+SERIALIZE_PREDICT = os.environ.get("PADDLE_VL_SERIALIZE", "true").lower() == "true"
+
+# Network volume path for model caching
 NETWORK_VOLUME_PATH = os.environ.get("RUNPOD_VOLUME_PATH", "/runpod-volume")
 MODEL_CACHE_DIR = os.environ.get(
     "PADDLE_VL_CACHE_DIR",
@@ -75,20 +72,13 @@ MODEL_CACHE_DIR = os.environ.get(
 
 def setup_model_cache():
     """Configure model cache directory for faster cold starts"""
-    # Check if network volume is mounted
     if os.path.exists(NETWORK_VOLUME_PATH) and os.access(NETWORK_VOLUME_PATH, os.W_OK):
-        # Create cache directory if it doesn't exist
         os.makedirs(MODEL_CACHE_DIR, exist_ok=True)
-
-        # Set PaddlePaddle and PaddleOCR cache directories
         os.environ["PADDLE_HOME"] = MODEL_CACHE_DIR
         os.environ["PADDLEOCR_HOME"] = MODEL_CACHE_DIR
         os.environ["HF_HOME"] = os.path.join(MODEL_CACHE_DIR, "huggingface")
         os.environ["HF_HUB_CACHE"] = os.path.join(MODEL_CACHE_DIR, "huggingface", "hub")
-
         print(f"[PaddleOCR-VL] Using network volume cache: {MODEL_CACHE_DIR}")
-
-        # Log cached contents for debugging
         try:
             cached_items = os.listdir(MODEL_CACHE_DIR)
             if cached_items:
@@ -97,7 +87,6 @@ def setup_model_cache():
                 print("[PaddleOCR-VL] Cache is empty - first run will download models")
         except Exception as e:
             print(f"[PaddleOCR-VL] Could not list cache: {e}")
-
         return True
     else:
         print("[PaddleOCR-VL] No network volume found, using container storage")
@@ -107,39 +96,28 @@ def setup_model_cache():
 def load_pipeline():
     """Load PaddleOCR-VL pipeline (runs once at container startup)"""
     global paddle_vl_pipeline
-
     if paddle_vl_pipeline is not None:
         return paddle_vl_pipeline
 
-    # Setup model cache before loading
     setup_model_cache()
 
     print("[PaddleOCR-VL] Loading pipeline...")
     start = time.time()
 
     from paddleocr import PaddleOCRVL
-
-    # Initialize document parsing pipeline
-    # This uses PP-DocLayoutV2 + PaddleOCR-VL-0.9B
     paddle_vl_pipeline = PaddleOCRVL()
 
     elapsed = time.time() - start
     print(f"[PaddleOCR-VL] Pipeline loaded in {elapsed:.2f}s")
-
     return paddle_vl_pipeline
 
 
 def resize_image_if_needed(image: Image.Image, max_dimension: int = 1920) -> Image.Image:
-    """
-    Resize image if it exceeds max dimension while preserving aspect ratio.
-    PaddleOCR-VL works best with images around 1080p-1920p.
-    """
+    """Resize image if it exceeds max dimension while preserving aspect ratio."""
     width, height = image.size
-
     if width <= max_dimension and height <= max_dimension:
         return image
 
-    # Calculate new dimensions preserving aspect ratio
     if width > height:
         new_width = max_dimension
         new_height = int(height * (max_dimension / width))
@@ -169,58 +147,44 @@ def convert_to_serializable(obj):
         return obj
 
 
-def process_single_image(pipeline, image_base64: str, page_number: int, skip_resize: bool = False) -> dict:
-    """Process a single image and return markdown + structured output
+def download_image(url: str) -> bytes:
+    """Download image from URL and return raw bytes"""
+    print(f"[PaddleOCR-VL] Downloading image from URL ({len(url)} chars)...")
+    resp = requests.get(url, timeout=120)
+    resp.raise_for_status()
+    print(f"[PaddleOCR-VL] Downloaded {len(resp.content)} bytes")
+    return resp.content
 
-    Args:
-        pipeline: The PaddleOCR-VL pipeline
-        image_base64: Base64 encoded image
-        page_number: Page number (1-indexed)
-        skip_resize: If True, skip handler-side resize (image already sized by client)
-    """
 
-    # Decode base64 image
-    image_bytes = base64.b64decode(image_base64)
+def process_single_image(pipeline, image_bytes: bytes, page_number: int, skip_resize: bool = False) -> dict:
+    """Process a single image (from bytes) and return markdown + structured output"""
     image = Image.open(io.BytesIO(image_bytes))
 
-    # Convert to RGB if necessary (PaddleOCR expects RGB)
     if image.mode != 'RGB':
         image = image.convert('RGB')
 
-    # Resize for optimal accuracy (unless client already handled it)
     if skip_resize:
         print(f"[PaddleOCR-VL] Skipping resize, using original {image.size[0]}x{image.size[1]}")
     else:
         image = resize_image_if_needed(image, max_dimension=1920)
 
-    # Save to temp file (PaddleOCR-VL requires file path)
     with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as tmp:
         image.save(tmp.name, 'PNG')
         tmp_path = tmp.name
 
     try:
-        # Run PaddleOCR-VL document parsing
-        # predict() returns an iterator/generator of result objects
         results = pipeline.predict(tmp_path)
 
         markdown_output = ""
         parsing_res_list = []
         json_output = None
 
-        # Iterate through results (usually one per image)
         for res in results:
-            print(f"[PaddleOCR-VL] Result object type: {type(res)}")
-            print(f"[PaddleOCR-VL] Result attributes: {dir(res)}")
-
-            # Try to get markdown content
-            # PaddleOCR 3.x: res.markdown is a dict with 'markdown_texts' key
             try:
                 md_info = res.markdown
-                print(f"[PaddleOCR-VL] markdown type: {type(md_info)}")
                 if md_info:
                     if isinstance(md_info, dict):
                         md_texts = md_info.get('markdown_texts', '')
-                        print(f"[PaddleOCR-VL] markdown_texts type: {type(md_texts)}")
                         if isinstance(md_texts, str):
                             markdown_output += md_texts
                         elif isinstance(md_texts, list):
@@ -230,22 +194,16 @@ def process_single_image(pipeline, image_base64: str, page_number: int, skip_res
             except Exception as e:
                 print(f"[PaddleOCR-VL] Error accessing markdown: {e}")
 
-            # Try to get JSON/parsing_res_list
             try:
                 json_data = res.json
-                print(f"[PaddleOCR-VL] json type: {type(json_data)}")
                 if json_data:
                     json_output = convert_to_serializable(json_data)
-                    # Extract parsing_res_list from json
                     if isinstance(json_data, dict) and 'parsing_res_list' in json_data:
                         parsing_res_list = convert_to_serializable(json_data['parsing_res_list'])
-                        print(f"[PaddleOCR-VL] Found {len(parsing_res_list)} blocks in parsing_res_list")
             except Exception as e:
                 print(f"[PaddleOCR-VL] Error accessing json: {e}")
 
-            # If no markdown but we have parsing_res_list, build markdown from blocks
             if not markdown_output and parsing_res_list:
-                print("[PaddleOCR-VL] Building markdown from parsing_res_list")
                 for block in parsing_res_list:
                     label = block.get('block_label', '')
                     content = block.get('block_content', '')
@@ -255,73 +213,103 @@ def process_single_image(pipeline, image_base64: str, page_number: int, skip_res
                         else:
                             markdown_output += f"\n{content}\n"
 
-        print(f"[PaddleOCR-VL] Final markdown length: {len(markdown_output)}")
-        print(f"[PaddleOCR-VL] Parsing blocks: {len(parsing_res_list)}")
-
         return {
             "page_number": page_number,
             "markdown": markdown_output.strip(),
             "parsing_res_list": parsing_res_list,
             "json": json_output
         }
-
     finally:
-        # Cleanup temp file
         if os.path.exists(tmp_path):
             os.unlink(tmp_path)
 
 
-def handler(event):
+async def process_single_image_async(pipeline, image_bytes: bytes, page_number: int, skip_resize: bool = False) -> dict:
+    """Async wrapper around process_single_image with optional serialization lock"""
+    global _predict_lock
+
+    if SERIALIZE_PREDICT:
+        if _predict_lock is None:
+            _predict_lock = asyncio.Lock()
+        async with _predict_lock:
+            return await asyncio.get_event_loop().run_in_executor(
+                None, process_single_image, pipeline, image_bytes, page_number, skip_resize
+            )
+    else:
+        return await asyncio.get_event_loop().run_in_executor(
+            None, process_single_image, pipeline, image_bytes, page_number, skip_resize
+        )
+
+
+async def handler(event):
     """
-    RunPod serverless handler function
+    RunPod serverless handler function (async, concurrent-capable)
 
     Accepts:
-    - images_base64: Array of base64 encoded images (multi-page)
-    - image_base64: Single base64 encoded image (single page)
+    - image_urls: Array of URLs to download images from (preferred, no size limit)
+    - images_base64: Array of base64 encoded images (backward compatible)
+    - image_base64: Single base64 encoded image
     """
     start_time = time.time()
 
     try:
-        # Get input
         job_input = event.get("input", {}) or {}
 
-        # Warmup-only path (pre-download models into the cache volume)
+        # Warmup path
         if event.get("warmup") or job_input.get("warmup"):
             load_pipeline()
             return {
                 "status": "success",
                 "result": {
                     "warmup": True,
-                    "cache_dir": MODEL_CACHE_DIR
+                    "cache_dir": MODEL_CACHE_DIR,
+                    "concurrent": True,
+                    "serialize_predict": SERIALIZE_PREDICT
                 }
             }
 
-        # Support both single image and multiple images
-        images_base64 = job_input.get("images_base64", [])
-        if not images_base64 and job_input.get("image_base64"):
-            images_base64 = [job_input.get("image_base64")]
+        skip_resize = job_input.get("skip_resize", False)
 
-        if not images_base64:
+        # Collect image bytes from URLs or base64
+        image_bytes_list: list[bytes] = []
+
+        # Priority 1: image_urls (preferred - no body size limit)
+        image_urls = job_input.get("image_urls", [])
+        if image_urls:
+            print(f"[PaddleOCR-VL] Downloading {len(image_urls)} images from URLs...")
+            for url in image_urls:
+                image_bytes_list.append(download_image(url))
+
+        # Priority 2: images_base64 (backward compatible)
+        if not image_bytes_list:
+            images_base64 = job_input.get("images_base64", [])
+            if not images_base64 and job_input.get("image_base64"):
+                images_base64 = [job_input.get("image_base64")]
+
+            for b64 in images_base64:
+                image_bytes_list.append(base64.b64decode(b64))
+
+        if not image_bytes_list:
             return {
                 "status": "error",
-                "error": "No images provided. Send 'images_base64' array or 'image_base64' string."
+                "error": "No images provided. Send 'image_urls', 'images_base64', or 'image_base64'."
             }
 
-        # Check if client wants to skip handler-side resize
-        skip_resize = job_input.get("skip_resize", False)
         if skip_resize:
             print(f"[PaddleOCR-VL] skip_resize=True (client handled sizing)")
 
-        print(f"[PaddleOCR-VL] Processing {len(images_base64)} page(s)")
+        print(f"[PaddleOCR-VL] Processing {len(image_bytes_list)} page(s) (concurrent handler)")
 
-        # Load pipeline (cached after first call)
         pipeline = load_pipeline()
 
-        # Process each page
+        # Process pages sequentially within a single job
+        # (GPU serializes naturally, lock protects pipeline state across concurrent jobs)
         pages = []
-        for i, img_b64 in enumerate(images_base64):
+        for i, img_bytes in enumerate(image_bytes_list):
             page_start = time.time()
-            page_result = process_single_image(pipeline, img_b64, page_number=i + 1, skip_resize=skip_resize)
+            page_result = await process_single_image_async(
+                pipeline, img_bytes, page_number=i + 1, skip_resize=skip_resize
+            )
             page_time = time.time() - page_start
             print(f"[PaddleOCR-VL] Page {i + 1} processed in {page_time:.2f}s")
             pages.append(page_result)
@@ -342,7 +330,6 @@ def handler(event):
         error_msg = str(e)
         stack_trace = traceback.format_exc()
         print(f"[PaddleOCR-VL] Error: {error_msg}\n{stack_trace}")
-
         return {
             "status": "error",
             "error": error_msg,
@@ -350,5 +337,17 @@ def handler(event):
         }
 
 
-# RunPod serverless start
-runpod.serverless.start({"handler": handler})
+def concurrency_modifier(current_concurrency: int) -> int:
+    """
+    Allow up to 20 concurrent jobs on this worker.
+    PaddleOCR-VL uses ~8GB of 48GB GPU, leaving plenty of room.
+    GPU work serializes naturally; CPU preprocessing/postprocessing overlaps.
+    """
+    return 20
+
+
+# RunPod serverless start with concurrency support
+runpod.serverless.start({
+    "handler": handler,
+    "concurrency_modifier": concurrency_modifier
+})

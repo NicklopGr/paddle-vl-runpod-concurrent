@@ -1,4 +1,7 @@
-# PaddleOCR-VL RunPod Serverless Container
+# PaddleOCR-VL RunPod Serverless Container (Concurrent Version)
+#
+# Same as paddle-vl-runpod but with concurrency_modifier for in-handler concurrency.
+# Multiple jobs can run simultaneously on the same GPU worker.
 #
 # Uses official PaddlePaddle 3.2.2 image with CUDA 12.6 + cuDNN 9.5
 # PaddleOCR 3.3.3 (latest as of Jan 26, 2026)
@@ -29,12 +32,10 @@ RUN apt-get update && apt-get install -y \
 RUN pip install --upgrade pip setuptools wheel
 
 # Install PaddleOCR 3.3.3 with doc-parser (includes VL model)
-# This provides PaddleOCR-VL document parsing capabilities
-# --ignore-installed needed because base image has distutils-installed PyYAML
 RUN pip install --ignore-installed "paddleocr[doc-parser]==3.3.3"
 
-# Install RunPod SDK
-RUN pip install runpod
+# Install RunPod SDK and requests (for URL downloading)
+RUN pip install runpod requests
 
 # Copy handler and warmup scripts
 COPY handler.py warmup.py ./
@@ -42,6 +43,10 @@ COPY handler.py warmup.py ./
 # Set environment variables for optimal performance
 ENV CUDA_VISIBLE_DEVICES=0
 ENV PADDLE_INFERENCE_MEMORY_OPTIM=1
+
+# Default: serialize pipeline.predict() calls (safe default)
+# Set to "false" if you confirm pipeline is thread-safe
+ENV PADDLE_VL_SERIALIZE=true
 
 # RunPod serverless entrypoint
 CMD ["python", "-u", "handler.py"]

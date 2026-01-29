@@ -1,0 +1,499 @@
+2026-01-20T15:42:26.628Z [INFO] #13 6.409 Collecting threadpoolctl>=3.1.0 (from scikit-learn->paddlex<3.4.0,>=3.3.0->paddlex[ocr-core]<3.4.0,>=3.3.0->paddleocr>=3.1.0->paddleocr[doc-parser]>=3.1.0)
+2026-01-20T15:42:26.732Z [INFO] #13 6.435   Downloading threadpoolctl-3.6.0-py3-none-any.whl.metadata (13 kB)
+2026-01-20T15:42:26.732Z [INFO] #13 6.513 Downloading paddleocr-3.3.3-py3-none-any.whl (87 kB)
+2026-01-20T15:42:26.857Z [INFO] #13 6.549 Downloading paddlex-3.3.13-py3-none-any.whl (1.9 MB)
+2026-01-20T15:42:27.082Z [INFO] #13 6.638    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.9/1.9 MB 27.1 MB/s  0:00:00
+2026-01-20T15:42:27.082Z [INFO] #13 6.670 Downloading PyYAML-6.0.2-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (751 kB)
+2026-01-20T15:42:27.082Z [INFO] #13 6.683    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 751.2/751.2 kB 76.7 MB/s  0:00:00
+2026-01-20T15:42:27.082Z [INFO] #13 6.712 Downloading opencv_contrib_python-4.10.0.84-cp37-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (68.7 MB)
+2026-01-20T15:42:27.420Z [INFO] #13 7.201    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 68.7/68.7 MB 142.2 MB/s  0:00:00
+2026-01-20T15:42:27.523Z [INFO] #13 7.231 Downloading aistudio_sdk-0.3.8-py3-none-any.whl (62 kB)
+2026-01-20T15:42:27.523Z [INFO] #13 7.260 Downloading modelscope-1.34.0-py3-none-any.whl (6.1 MB)
+2026-01-20T15:42:27.523Z [INFO] #13 7.304    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 6.1/6.1 MB 138.5 MB/s  0:00:00
+2026-01-20T15:42:27.648Z [INFO] #13 7.331 Downloading openai-2.15.0-py3-none-any.whl (1.1 MB)
+2026-01-20T15:42:27.648Z [INFO] #13 7.340    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.1/1.1 MB 123.9 MB/s  0:00:00
+2026-01-20T15:42:27.648Z [INFO] #13 7.370 Downloading jiter-0.12.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (364 kB)
+2026-01-20T15:42:27.648Z [INFO] #13 7.399 Downloading pydantic-2.12.5-py3-none-any.whl (463 kB)
+2026-01-20T15:42:27.648Z [INFO] #13 7.429 Downloading pydantic_core-2.41.5-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (2.1 MB)
+2026-01-20T15:42:27.750Z [INFO] #13 7.448    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.1/2.1 MB 117.2 MB/s  0:00:00
+2026-01-20T15:42:27.750Z [INFO] #13 7.474 Downloading typing_extensions-4.15.0-py3-none-any.whl (44 kB)
+2026-01-20T15:42:27.750Z [INFO] #13 7.502 Downloading annotated_types-0.7.0-py3-none-any.whl (13 kB)
+2026-01-20T15:42:27.750Z [INFO] #13 7.531 Downloading pandas-2.3.3-cp310-cp310-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl (12.8 MB)
+2026-01-20T15:42:27.876Z [INFO] #13 7.622    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 12.8/12.8 MB 142.8 MB/s  0:00:00
+2026-01-20T15:42:27.876Z [INFO] #13 7.657 Downloading pypdfium2-5.3.0-py3-none-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (3.0 MB)
+2026-01-20T15:42:27.987Z [INFO] #13 7.678    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3.0/3.0 MB 151.5 MB/s  0:00:00
+2026-01-20T15:42:27.987Z [INFO] #13 7.705 Downloading pytz-2025.2-py2.py3-none-any.whl (509 kB)
+2026-01-20T15:42:27.987Z [INFO] #13 7.736 Downloading safetensors-0.7.0-cp38-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (507 kB)
+2026-01-20T15:42:27.987Z [INFO] #13 7.768 Downloading tokenizers-0.22.2-cp39-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (3.3 MB)
+2026-01-20T15:42:28.091Z [INFO] #13 7.790    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3.3/3.3 MB 154.8 MB/s  0:00:00
+2026-01-20T15:42:28.091Z [INFO] #13 7.817 Downloading huggingface_hub-1.3.2-py3-none-any.whl (534 kB)
+2026-01-20T15:42:28.091Z [INFO] #13 7.822    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 534.5/534.5 kB 88.9 MB/s  0:00:00
+2026-01-20T15:42:28.091Z [INFO] #13 7.848 Downloading hf_xet-1.2.0-cp37-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (3.3 MB)
+2026-01-20T15:42:28.091Z [INFO] #13 7.872    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3.3/3.3 MB 149.5 MB/s  0:00:00
+2026-01-20T15:42:28.207Z [INFO] #13 7.900 Downloading tqdm-4.67.1-py3-none-any.whl (78 kB)
+2026-01-20T15:42:28.207Z [INFO] #13 7.927 Downloading typing_inspection-0.4.2-py3-none-any.whl (14 kB)
+2026-01-20T15:42:28.207Z [INFO] #13 7.955 Downloading tzdata-2025.3-py2.py3-none-any.whl (348 kB)
+2026-01-20T15:42:28.207Z [INFO] #13 7.988 Downloading bce_python_sdk-0.9.59-py3-none-any.whl (394 kB)
+2026-01-20T15:42:28.310Z [INFO] #13 8.017 Downloading future-1.0.0-py3-none-any.whl (491 kB)
+2026-01-20T15:42:28.310Z [INFO] #13 8.048 Downloading pycryptodome-3.23.0-cp37-abi3-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (2.3 MB)
+2026-01-20T15:42:28.310Z [INFO] #13 8.064    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.3/2.3 MB 149.3 MB/s  0:00:00
+2026-01-20T15:42:28.310Z [INFO] #13 8.091 Downloading chardet-5.2.0-py3-none-any.whl (199 kB)
+2026-01-20T15:42:28.424Z [INFO] #13 8.120 Downloading click-8.3.1-py3-none-any.whl (108 kB)
+2026-01-20T15:42:28.424Z [INFO] #13 8.148 Downloading colorlog-6.10.1-py3-none-any.whl (11 kB)
+2026-01-20T15:42:28.424Z [INFO] #13 8.175 Downloading ftfy-6.3.1-py3-none-any.whl (44 kB)
+2026-01-20T15:42:28.424Z [INFO] #13 8.205 Downloading imagesize-1.4.1-py2.py3-none-any.whl (8.8 kB)
+2026-01-20T15:42:28.537Z [INFO] #13 8.232 Downloading openpyxl-3.1.5-py2.py3-none-any.whl (250 kB)
+2026-01-20T15:42:28.538Z [INFO] #13 8.261 Downloading et_xmlfile-2.0.0-py3-none-any.whl (18 kB)
+2026-01-20T15:42:28.538Z [INFO] #13 8.290 Downloading premailer-3.10.0-py2.py3-none-any.whl (19 kB)
+2026-01-20T15:42:28.538Z [INFO] #13 8.318 Downloading cachetools-6.2.4-py3-none-any.whl (11 kB)
+2026-01-20T15:42:28.657Z [INFO] #13 8.346 Downloading cssselect-1.3.0-py3-none-any.whl (18 kB)
+2026-01-20T15:42:28.657Z [INFO] #13 8.376 Downloading cssutils-2.11.1-py3-none-any.whl (385 kB)
+2026-01-20T15:42:28.657Z [INFO] #13 8.409 Downloading prettytable-3.17.0-py3-none-any.whl (34 kB)
+2026-01-20T15:42:28.657Z [INFO] #13 8.438 Downloading py_cpuinfo-9.0.0-py3-none-any.whl (22 kB)
+2026-01-20T15:42:28.761Z [INFO] #13 8.469 Downloading pyclipper-1.4.0-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (970 kB)
+2026-01-20T15:42:28.761Z [INFO] #13 8.477    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 971.0/971.0 kB 123.6 MB/s  0:00:00
+2026-01-20T15:42:28.761Z [INFO] #13 8.505 Downloading python_bidi-0.6.7-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (302 kB)
+2026-01-20T15:42:28.761Z [INFO] #13 8.542 Downloading regex-2026.1.15-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (791 kB)
+2026-01-20T15:42:28.907Z [INFO] #13 8.549    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 791.8/791.8 kB 107.2 MB/s  0:00:00
+2026-01-20T15:42:28.907Z [INFO] #13 8.575 Downloading ruamel_yaml-0.19.1-py3-none-any.whl (118 kB)
+2026-01-20T15:42:28.907Z [INFO] #13 8.610 Downloading scikit_learn-1.7.2-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (9.7 MB)
+2026-01-20T15:42:29.118Z [INFO] #13 8.688    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 9.7/9.7 MB 132.4 MB/s  0:00:00
+2026-01-20T15:42:29.118Z [INFO] #13 8.718 Downloading joblib-1.5.3-py3-none-any.whl (309 kB)
+2026-01-20T15:42:29.118Z [INFO] #13 8.748 Downloading scipy-1.15.3-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (37.7 MB)
+2026-01-20T15:42:29.328Z [INFO] #13 9.008    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 37.7/37.7 MB 146.0 MB/s  0:00:00
+2026-01-20T15:42:29.328Z [INFO] #13 9.034 Downloading threadpoolctl-3.6.0-py3-none-any.whl (18 kB)
+2026-01-20T15:42:29.328Z [INFO] #13 9.065 Downloading sentencepiece-0.2.1-cp310-cp310-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl (1.4 MB)
+2026-01-20T15:42:29.328Z [INFO] #13 9.075    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.4/1.4 MB 138.8 MB/s  0:00:00
+2026-01-20T15:42:29.328Z [INFO] #13 9.109 Downloading shapely-2.1.2-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (3.1 MB)
+2026-01-20T15:42:29.447Z [INFO] #13 9.132    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3.1/3.1 MB 137.1 MB/s  0:00:00
+2026-01-20T15:42:29.447Z [INFO] #13 9.159 Downloading shellingham-1.5.4-py2.py3-none-any.whl (9.8 kB)
+2026-01-20T15:42:29.447Z [INFO] #13 9.193 Downloading tiktoken-0.12.0-cp310-cp310-manylinux_2_28_x86_64.whl (1.2 MB)
+2026-01-20T15:42:29.447Z [INFO] #13 9.202    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.2/1.2 MB 125.0 MB/s  0:00:00
+2026-01-20T15:42:29.447Z [INFO] #13 9.228 Downloading typer_slim-0.21.1-py3-none-any.whl (47 kB)
+2026-01-20T15:42:29.626Z [INFO] #13 9.256 Downloading ujson-5.11.0-cp310-cp310-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl (57 kB)
+2026-01-20T15:42:30.022Z [INFO] #13 9.802 Installing collected packages: pytz, python-bidi, py-cpuinfo, ujson, tzdata, typing-extensions, tqdm, threadpoolctl, shellingham, shapely, sentencepiece, scipy, safetensors, ruamel.yaml, regex, PyYAML, pypdfium2, pycryptodome, pyclipper, prettytable, opencv-contrib-python, joblib, jiter, imagesize, hf-xet, future, ftfy, et-xmlfile, cssutils, cssselect, colorlog, click, chardet, cachetools, annotated-types, typing-inspection, typer-slim, tiktoken, scikit-learn, pydantic-core, premailer, pandas, openpyxl, modelscope, bce-python-sdk, pydantic, aistudio-sdk, openai, huggingface-hub, tokenizers, paddlex, paddleocr
+2026-01-20T15:42:30.217Z [INFO] #13 9.998   Attempting uninstall: typing-extensions
+2026-01-20T15:42:30.370Z [INFO] #13 9.999     Found existing installation: typing_extensions 4.9.0
+2026-01-20T15:42:30.370Z [INFO] #13 10.00     Uninstalling typing_extensions-4.9.0:
+2026-01-20T15:42:30.384Z [INFO] #13 10.17       Successfully uninstalled typing_extensions-4.9.0
+2026-01-20T15:42:33.158Z [INFO] #13 12.94   Attempting uninstall: PyYAML
+2026-01-20T15:42:33.320Z [INFO] #13 12.94     Found existing installation: PyYAML 6.0.1
+2026-01-20T15:42:33.320Z [INFO] #13 12.94     Uninstalling PyYAML-6.0.1:
+2026-01-20T15:42:33.320Z [INFO] #13 12.95       Successfully uninstalled PyYAML-6.0.1
+2026-01-20T15:42:43.911Z [INFO] #13 23.69
+2026-01-20T15:42:44.078Z [INFO] #13 23.71 ERROR: pip's dependency resolver does not currently take into account all the packages that are installed. This behaviour is the source of the following dependency conflicts.
+2026-01-20T15:42:44.078Z [INFO] #13 23.71 torch 2.2.0 requires nvidia-cublas-cu12==12.1.3.1; platform_system == "Linux" and platform_machine == "x86_64", but you have nvidia-cublas-cu12 12.3.4.1 which is incompatible.
+2026-01-20T15:42:44.078Z [INFO] #13 23.71 torch 2.2.0 requires nvidia-cuda-cupti-cu12==12.1.105; platform_system == "Linux" and platform_machine == "x86_64", but you have nvidia-cuda-cupti-cu12 12.3.101 which is incompatible.
+2026-01-20T15:42:44.078Z [INFO] #13 23.71 torch 2.2.0 requires nvidia-cuda-nvrtc-cu12==12.1.105; platform_system == "Linux" and platform_machine == "x86_64", but you have nvidia-cuda-nvrtc-cu12 12.3.107 which is incompatible.
+2026-01-20T15:42:44.078Z [INFO] #13 23.71 torch 2.2.0 requires nvidia-cuda-runtime-cu12==12.1.105; platform_system == "Linux" and platform_machine == "x86_64", but you have nvidia-cuda-runtime-cu12 12.3.101 which is incompatible.
+2026-01-20T15:42:44.078Z [INFO] #13 23.71 torch 2.2.0 requires nvidia-cudnn-cu12==8.9.2.26; platform_system == "Linux" and platform_machine == "x86_64", but you have nvidia-cudnn-cu12 9.0.0.312 which is incompatible.
+2026-01-20T15:42:44.078Z [INFO] #13 23.71 torch 2.2.0 requires nvidia-cufft-cu12==11.0.2.54; platform_system == "Linux" and platform_machine == "x86_64", but you have nvidia-cufft-cu12 11.2.1.3 which is incompatible.
+2026-01-20T15:42:44.078Z [INFO] #13 23.71 torch 2.2.0 requires nvidia-curand-cu12==10.3.2.106; platform_system == "Linux" and platform_machine == "x86_64", but you have nvidia-curand-cu12 10.3.5.147 which is incompatible.
+2026-01-20T15:42:44.078Z [INFO] #13 23.71 torch 2.2.0 requires nvidia-cusolver-cu12==11.4.5.107; platform_system == "Linux" and platform_machine == "x86_64", but you have nvidia-cusolver-cu12 11.6.1.9 which is incompatible.
+2026-01-20T15:42:44.078Z [INFO] #13 23.71 torch 2.2.0 requires nvidia-cusparse-cu12==12.1.0.106; platform_system == "Linux" and platform_machine == "x86_64", but you have nvidia-cusparse-cu12 12.3.1.170 which is incompatible.
+2026-01-20T15:42:44.078Z [INFO] #13 23.71 torch 2.2.0 requires nvidia-nvtx-cu12==12.1.105; platform_system == "Linux" and platform_machine == "x86_64", but you have nvidia-nvtx-cu12 12.4.127 which is incompatible.
+2026-01-20T15:42:44.078Z [INFO] #13 23.71 Successfully installed PyYAML-6.0.2 aistudio-sdk-0.3.8 annotated-types-0.7.0 bce-python-sdk-0.9.59 cachetools-6.2.4 chardet-5.2.0 click-8.3.1 colorlog-6.10.1 cssselect-1.3.0 cssutils-2.11.1 et-xmlfile-2.0.0 ftfy-6.3.1 future-1.0.0 hf-xet-1.2.0 huggingface-hub-1.3.2 imagesize-1.4.1 jiter-0.12.0 joblib-1.5.3 modelscope-1.34.0 openai-2.15.0 opencv-contrib-python-4.10.0.84 openpyxl-3.1.5 paddleocr-3.3.3 paddlex-3.3.13 pandas-2.3.3 premailer-3.10.0 prettytable-3.17.0 py-cpuinfo-9.0.0 pyclipper-1.4.0 pycryptodome-3.23.0 pydantic-2.12.5 pydantic-core-2.41.5 pypdfium2-5.3.0 python-bidi-0.6.7 pytz-2025.2 regex-2026.1.15 ruamel.yaml-0.19.1 safetensors-0.7.0 scikit-learn-1.7.2 scipy-1.15.3 sentencepiece-0.2.1 shapely-2.1.2 shellingham-1.5.4 threadpoolctl-3.6.0 tiktoken-0.12.0 tokenizers-0.22.2 tqdm-4.67.1 typer-slim-0.21.1 typing-extensions-4.15.0 typing-inspection-0.4.2 tzdata-2025.3 ujson-5.11.0
+2026-01-20T15:42:44.078Z [INFO] #13 23.71 WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager, possibly rendering your system unusable. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv. Use the --root-user-action option if you know what you are doing and want to suppress this warning.
+2026-01-20T15:42:45.371Z [INFO] #13 DONE 25.2s
+2026-01-20T15:42:45.522Z [INFO] #14 [ 8/11] RUN pip install     nvidia-cuda-nvrtc-cu12==12.1.105     nvidia-cuda-runtime-cu12==12.1.105     nvidia-cublas-cu12==12.1.3.1     nvidia-cusparse-cu12==12.1.0.106     nvidia-cufft-cu12==11.0.2.54     nvidia-curand-cu12==10.3.2.106     nvidia-cusolver-cu12==11.4.5.107     nvidia-nccl-cu12==2.19.3     nvidia-nvjitlink-cu12==12.1.105     nvidia-cudnn-cu12==8.9.7.29     --force-reinstall
+2026-01-20T15:42:46.278Z [INFO] #14 0.906 Collecting nvidia-cuda-nvrtc-cu12==12.1.105
+2026-01-20T15:42:46.386Z [INFO] #14 1.014   Downloading nvidia_cuda_nvrtc_cu12-12.1.105-py3-none-manylinux1_x86_64.whl.metadata (1.5 kB)
+2026-01-20T15:42:46.486Z [INFO] #14 1.053 Collecting nvidia-cuda-runtime-cu12==12.1.105
+2026-01-20T15:42:46.486Z [INFO] #14 1.075   Downloading nvidia_cuda_runtime_cu12-12.1.105-py3-none-manylinux1_x86_64.whl.metadata (1.5 kB)
+2026-01-20T15:42:46.486Z [INFO] #14 1.114 Collecting nvidia-cublas-cu12==12.1.3.1
+2026-01-20T15:42:46.605Z [INFO] #14 1.136   Downloading nvidia_cublas_cu12-12.1.3.1-py3-none-manylinux1_x86_64.whl.metadata (1.5 kB)
+2026-01-20T15:42:46.605Z [INFO] #14 1.174 Collecting nvidia-cusparse-cu12==12.1.0.106
+2026-01-20T15:42:46.605Z [INFO] #14 1.195   Downloading nvidia_cusparse_cu12-12.1.0.106-py3-none-manylinux1_x86_64.whl.metadata (1.6 kB)
+2026-01-20T15:42:46.605Z [INFO] #14 1.234 Collecting nvidia-cufft-cu12==11.0.2.54
+2026-01-20T15:42:46.723Z [INFO] #14 1.255   Downloading nvidia_cufft_cu12-11.0.2.54-py3-none-manylinux1_x86_64.whl.metadata (1.5 kB)
+2026-01-20T15:42:46.723Z [INFO] #14 1.293 Collecting nvidia-curand-cu12==10.3.2.106
+2026-01-20T15:42:46.723Z [INFO] #14 1.314   Downloading nvidia_curand_cu12-10.3.2.106-py3-none-manylinux1_x86_64.whl.metadata (1.5 kB)
+2026-01-20T15:42:46.723Z [INFO] #14 1.352 Collecting nvidia-cusolver-cu12==11.4.5.107
+2026-01-20T15:42:46.853Z [INFO] #14 1.373   Downloading nvidia_cusolver_cu12-11.4.5.107-py3-none-manylinux1_x86_64.whl.metadata (1.6 kB)
+2026-01-20T15:42:46.853Z [INFO] #14 1.419 Collecting nvidia-nccl-cu12==2.19.3
+2026-01-20T15:42:46.853Z [INFO] #14 1.442   Downloading nvidia_nccl_cu12-2.19.3-py3-none-manylinux1_x86_64.whl.metadata (1.8 kB)
+2026-01-20T15:42:46.853Z [INFO] #14 1.481 Collecting nvidia-nvjitlink-cu12==12.1.105
+2026-01-20T15:42:46.970Z [INFO] #14 1.504   Downloading nvidia_nvjitlink_cu12-12.1.105-py3-none-manylinux1_x86_64.whl.metadata (1.5 kB)
+2026-01-20T15:42:46.970Z [INFO] #14 1.546 Collecting nvidia-cudnn-cu12==8.9.7.29
+2026-01-20T15:42:46.970Z [INFO] #14 1.568   Downloading nvidia_cudnn_cu12-8.9.7.29-py3-none-manylinux1_x86_64.whl.metadata (1.6 kB)
+2026-01-20T15:42:46.970Z [INFO] #14 1.597 Downloading nvidia_cuda_nvrtc_cu12-12.1.105-py3-none-manylinux1_x86_64.whl (23.7 MB)
+2026-01-20T15:42:47.238Z [INFO] #14 1.866    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 23.7/23.7 MB 113.8 MB/s  0:00:00
+2026-01-20T15:42:47.447Z [INFO] #14 1.890 Downloading nvidia_cuda_runtime_cu12-12.1.105-py3-none-manylinux1_x86_64.whl (823 kB)
+2026-01-20T15:42:47.447Z [INFO] #14 1.896    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 823.6/823.6 kB 162.2 MB/s  0:00:00
+2026-01-20T15:42:47.447Z [INFO] #14 1.925 Downloading nvidia_cublas_cu12-12.1.3.1-py3-none-manylinux1_x86_64.whl (410.6 MB)
+2026-01-20T15:42:50.367Z [INFO] #14 4.816    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 410.6/410.6 MB 128.7 MB/s  0:00:02
+2026-01-20T15:42:50.367Z [INFO] #14 4.844 Downloading nvidia_cusparse_cu12-12.1.0.106-py3-none-manylinux1_x86_64.whl (196.0 MB)
+2026-01-20T15:42:51.720Z [INFO] #14 6.348    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 196.0/196.0 MB 130.3 MB/s  0:00:01
+2026-01-20T15:42:51.899Z [INFO] #14 6.377 Downloading nvidia_cufft_cu12-11.0.2.54-py3-none-manylinux1_x86_64.whl (121.6 MB)
+2026-01-20T15:42:52.668Z [INFO] #14 7.296    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 121.6/121.6 MB 132.4 MB/s  0:00:00
+2026-01-20T15:42:52.848Z [INFO] #14 7.325 Downloading nvidia_curand_cu12-10.3.2.106-py3-none-manylinux1_x86_64.whl (56.5 MB)
+2026-01-20T15:42:53.102Z [INFO] #14 7.730    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 56.5/56.5 MB 139.7 MB/s  0:00:00
+2026-01-20T15:42:53.277Z [INFO] #14 7.755 Downloading nvidia_cusolver_cu12-11.4.5.107-py3-none-manylinux1_x86_64.whl (124.2 MB)
+2026-01-20T15:42:54.301Z [INFO] #14 8.749    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 124.2/124.2 MB 125.2 MB/s  0:00:00
+2026-01-20T15:42:54.301Z [INFO] #14 8.778 Downloading nvidia_nccl_cu12-2.19.3-py3-none-manylinux1_x86_64.whl (166.0 MB)
+2026-01-20T15:42:55.269Z [INFO] #14 9.897    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 166.0/166.0 MB 148.4 MB/s  0:00:01
+2026-01-20T15:42:55.394Z [INFO] #14 10.02 Downloading nvidia_nvjitlink_cu12-12.1.105-py3-none-manylinux1_x86_64.whl (19.8 MB)
+2026-01-20T15:42:56.771Z [INFO] #14 11.40    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 19.8/19.8 MB 14.2 MB/s  0:00:01
+2026-01-20T15:42:56.946Z [INFO] #14 11.42 Downloading nvidia_cudnn_cu12-8.9.7.29-py3-none-manylinux1_x86_64.whl (704.7 MB)
+2026-01-20T15:43:03.210Z [INFO] #14 17.84    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 704.7/704.7 MB 91.6 MB/s  0:00:06
+2026-01-20T15:43:04.714Z [INFO] #14 19.34 Installing collected packages: nvidia-nvjitlink-cu12, nvidia-nccl-cu12, nvidia-curand-cu12, nvidia-cufft-cu12, nvidia-cuda-runtime-cu12, nvidia-cuda-nvrtc-cu12, nvidia-cublas-cu12, nvidia-cusparse-cu12, nvidia-cudnn-cu12, nvidia-cusolver-cu12
+2026-01-20T15:43:04.906Z [INFO] #14 19.34   Attempting uninstall: nvidia-nvjitlink-cu12
+2026-01-20T15:43:04.906Z [INFO] #14 19.34     Found existing installation: nvidia-nvjitlink-cu12 12.3.101
+2026-01-20T15:43:04.906Z [INFO] #14 19.35     Uninstalling nvidia-nvjitlink-cu12-12.3.101:
+2026-01-20T15:43:04.906Z [INFO] #14 19.38       Successfully uninstalled nvidia-nvjitlink-cu12-12.3.101
+2026-01-20T15:43:04.971Z [INFO] #14 19.60   Attempting uninstall: nvidia-nccl-cu12
+2026-01-20T15:43:05.102Z [INFO] #14 19.60     Found existing installation: nvidia-nccl-cu12 2.19.3
+2026-01-20T15:43:05.102Z [INFO] #14 19.60     Uninstalling nvidia-nccl-cu12-2.19.3:
+2026-01-20T15:43:05.102Z [INFO] #14 19.73       Successfully uninstalled nvidia-nccl-cu12-2.19.3
+2026-01-20T15:43:06.446Z [INFO] #14 21.07   Attempting uninstall: nvidia-curand-cu12
+2026-01-20T15:43:06.668Z [INFO] #14 21.07     Found existing installation: nvidia-curand-cu12 10.3.5.147
+2026-01-20T15:43:06.668Z [INFO] #14 21.08     Uninstalling nvidia-curand-cu12-10.3.5.147:
+2026-01-20T15:43:06.668Z [INFO] #14 21.15       Successfully uninstalled nvidia-curand-cu12-10.3.5.147
+2026-01-20T15:43:06.867Z [INFO] #14 21.50   Attempting uninstall: nvidia-cufft-cu12
+2026-01-20T15:43:07.020Z [INFO] #14 21.50     Found existing installation: nvidia-cufft-cu12 11.2.1.3
+2026-01-20T15:43:07.020Z [INFO] #14 21.50     Uninstalling nvidia-cufft-cu12-11.2.1.3:
+2026-01-20T15:43:07.043Z [INFO] #14 21.67       Successfully uninstalled nvidia-cufft-cu12-11.2.1.3
+2026-01-20T15:43:08.099Z [INFO] #14 22.73   Attempting uninstall: nvidia-cuda-runtime-cu12
+2026-01-20T15:43:08.222Z [INFO] #14 22.73     Found existing installation: nvidia-cuda-runtime-cu12 12.3.101
+2026-01-20T15:43:08.222Z [INFO] #14 22.73     Uninstalling nvidia-cuda-runtime-cu12-12.3.101:
+2026-01-20T15:43:08.222Z [INFO] #14 22.75       Successfully uninstalled nvidia-cuda-runtime-cu12-12.3.101
+2026-01-20T15:43:08.223Z [INFO] #14 22.79   Attempting uninstall: nvidia-cuda-nvrtc-cu12
+2026-01-20T15:43:08.223Z [INFO] #14 22.79     Found existing installation: nvidia-cuda-nvrtc-cu12 12.3.107
+2026-01-20T15:43:08.223Z [INFO] #14 22.79     Uninstalling nvidia-cuda-nvrtc-cu12-12.3.107:
+2026-01-20T15:43:08.223Z [INFO] #14 22.85       Successfully uninstalled nvidia-cuda-nvrtc-cu12-12.3.107
+2026-01-20T15:43:08.515Z [INFO] #14 23.14   Attempting uninstall: nvidia-cublas-cu12
+2026-01-20T15:43:08.667Z [INFO] #14 23.14     Found existing installation: nvidia-cublas-cu12 12.3.4.1
+2026-01-20T15:43:08.667Z [INFO] #14 23.14     Uninstalling nvidia-cublas-cu12-12.3.4.1:
+2026-01-20T15:43:08.896Z [INFO] #14 23.52       Successfully uninstalled nvidia-cublas-cu12-12.3.4.1
+2026-01-20T15:43:12.394Z [INFO] #14 27.02   Attempting uninstall: nvidia-cusparse-cu12
+2026-01-20T15:43:12.547Z [INFO] #14 27.02     Found existing installation: nvidia-cusparse-cu12 12.3.1.170
+2026-01-20T15:43:12.547Z [INFO] #14 27.02     Uninstalling nvidia-cusparse-cu12-12.3.1.170:
+2026-01-20T15:43:12.560Z [INFO] #14 27.19       Successfully uninstalled nvidia-cusparse-cu12-12.3.1.170
+2026-01-20T15:43:14.121Z [INFO] #14 28.75   Attempting uninstall: nvidia-cudnn-cu12
+2026-01-20T15:43:14.274Z [INFO] #14 28.75     Found existing installation: nvidia-cudnn-cu12 9.0.0.312
+2026-01-20T15:43:14.274Z [INFO] #14 28.75     Uninstalling nvidia-cudnn-cu12-9.0.0.312:
+2026-01-20T15:43:14.691Z [INFO] #14 29.32       Successfully uninstalled nvidia-cudnn-cu12-9.0.0.312
+2026-01-20T15:43:20.857Z [INFO] #14 35.49   Attempting uninstall: nvidia-cusolver-cu12
+2026-01-20T15:43:20.983Z [INFO] #14 35.49     Found existing installation: nvidia-cusolver-cu12 11.6.1.9
+2026-01-20T15:43:20.983Z [INFO] #14 35.49     Uninstalling nvidia-cusolver-cu12-11.6.1.9:
+2026-01-20T15:43:20.983Z [INFO] #14 35.61       Successfully uninstalled nvidia-cusolver-cu12-11.6.1.9
+2026-01-20T15:43:22.076Z [INFO] #14 36.70
+2026-01-20T15:43:22.244Z [INFO] #14 36.72 ERROR: pip's dependency resolver does not currently take into account all the packages that are installed. This behaviour is the source of the following dependency conflicts.
+2026-01-20T15:43:22.244Z [INFO] #14 36.72 paddlepaddle-gpu 3.0.0b2 requires nvidia-cublas-cu12==12.3.4.1; platform_system == "Linux" and platform_machine == "x86_64", but you have nvidia-cublas-cu12 12.1.3.1 which is incompatible.
+2026-01-20T15:43:22.244Z [INFO] #14 36.72 paddlepaddle-gpu 3.0.0b2 requires nvidia-cuda-nvrtc-cu12==12.3.107; platform_system == "Linux" and platform_machine == "x86_64", but you have nvidia-cuda-nvrtc-cu12 12.1.105 which is incompatible.
+2026-01-20T15:43:22.244Z [INFO] #14 36.72 paddlepaddle-gpu 3.0.0b2 requires nvidia-cuda-runtime-cu12==12.3.101; platform_system == "Linux" and platform_machine == "x86_64", but you have nvidia-cuda-runtime-cu12 12.1.105 which is incompatible.
+2026-01-20T15:43:22.244Z [INFO] #14 36.72 paddlepaddle-gpu 3.0.0b2 requires nvidia-cudnn-cu12==9.0.0.312; platform_system == "Linux" and platform_machine == "x86_64", but you have nvidia-cudnn-cu12 8.9.7.29 which is incompatible.
+2026-01-20T15:43:22.244Z [INFO] #14 36.72 paddlepaddle-gpu 3.0.0b2 requires nvidia-cufft-cu12==11.2.1.3; platform_system == "Linux" and platform_machine == "x86_64", but you have nvidia-cufft-cu12 11.0.2.54 which is incompatible.
+2026-01-20T15:43:22.244Z [INFO] #14 36.72 paddlepaddle-gpu 3.0.0b2 requires nvidia-curand-cu12==10.3.5.147; platform_system == "Linux" and platform_machine == "x86_64", but you have nvidia-curand-cu12 10.3.2.106 which is incompatible.
+2026-01-20T15:43:22.244Z [INFO] #14 36.72 paddlepaddle-gpu 3.0.0b2 requires nvidia-cusolver-cu12==11.6.1.9; platform_system == "Linux" and platform_machine == "x86_64", but you have nvidia-cusolver-cu12 11.4.5.107 which is incompatible.
+2026-01-20T15:43:22.244Z [INFO] #14 36.72 paddlepaddle-gpu 3.0.0b2 requires nvidia-cusparse-cu12==12.3.1.170; platform_system == "Linux" and platform_machine == "x86_64", but you have nvidia-cusparse-cu12 12.1.0.106 which is incompatible.
+2026-01-20T15:43:22.244Z [INFO] #14 36.72 torch 2.2.0 requires nvidia-cuda-cupti-cu12==12.1.105; platform_system == "Linux" and platform_machine == "x86_64", but you have nvidia-cuda-cupti-cu12 12.3.101 which is incompatible.
+2026-01-20T15:43:22.244Z [INFO] #14 36.72 torch 2.2.0 requires nvidia-cudnn-cu12==8.9.2.26; platform_system == "Linux" and platform_machine == "x86_64", but you have nvidia-cudnn-cu12 8.9.7.29 which is incompatible.
+2026-01-20T15:43:22.244Z [INFO] #14 36.72 torch 2.2.0 requires nvidia-nvtx-cu12==12.1.105; platform_system == "Linux" and platform_machine == "x86_64", but you have nvidia-nvtx-cu12 12.4.127 which is incompatible.
+2026-01-20T15:43:22.244Z [INFO] #14 36.72 Successfully installed nvidia-cublas-cu12-12.1.3.1 nvidia-cuda-nvrtc-cu12-12.1.105 nvidia-cuda-runtime-cu12-12.1.105 nvidia-cudnn-cu12-8.9.7.29 nvidia-cufft-cu12-11.0.2.54 nvidia-curand-cu12-10.3.2.106 nvidia-cusolver-cu12-11.4.5.107 nvidia-cusparse-cu12-12.1.0.106 nvidia-nccl-cu12-2.19.3 nvidia-nvjitlink-cu12-12.1.105
+2026-01-20T15:43:22.244Z [INFO] #14 36.72 WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager, possibly rendering your system unusable. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv. Use the --root-user-action option if you know what you are doing and want to suppress this warning.
+2026-01-20T15:43:23.180Z [INFO] #14 DONE 37.8s
+2026-01-20T15:43:23.331Z [INFO] #15 [ 9/11] RUN pip install runpod
+2026-01-20T15:43:23.837Z [INFO] #15 0.657 Collecting runpod
+2026-01-20T15:43:23.951Z [INFO] #15 0.770   Downloading runpod-1.8.1-py3-none-any.whl.metadata (9.9 kB)
+2026-01-20T15:43:24.443Z [INFO] #15 1.262 Collecting aiohttp>=3.9.3 (from aiohttp[speedups]>=3.9.3->runpod)
+2026-01-20T15:43:24.569Z [INFO] #15 1.287   Downloading aiohttp-3.13.3-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (8.1 kB)
+2026-01-20T15:43:24.569Z [INFO] #15 1.327 Collecting aiohttp-retry>=2.8.3 (from runpod)
+2026-01-20T15:43:24.569Z [INFO] #15 1.352   Downloading aiohttp_retry-2.9.1-py3-none-any.whl.metadata (8.8 kB)
+2026-01-20T15:43:24.569Z [INFO] #15 1.388 Collecting backoff>=2.2.1 (from runpod)
+2026-01-20T15:43:24.744Z [INFO] #15 1.413   Downloading backoff-2.2.1-py3-none-any.whl.metadata (14 kB)
+2026-01-20T15:43:24.843Z [INFO] #15 1.662 Collecting boto3>=1.26.165 (from runpod)
+2026-01-20T15:43:24.989Z [INFO] #15 1.686   Downloading boto3-1.42.30-py3-none-any.whl.metadata (6.8 kB)
+2026-01-20T15:43:24.989Z [INFO] #15 1.690 Requirement already satisfied: click>=8.1.7 in /usr/local/lib/python3.10/dist-packages (from runpod) (8.3.1)
+2026-01-20T15:43:24.989Z [INFO] #15 1.723 Collecting colorama<0.4.7,>=0.2.5 (from runpod)
+2026-01-20T15:43:24.989Z [INFO] #15 1.746   Downloading colorama-0.4.6-py2.py3-none-any.whl.metadata (17 kB)
+2026-01-20T15:43:24.989Z [INFO] #15 1.752 Requirement already satisfied: cryptography<46.0.0 in /usr/lib/python3/dist-packages (from runpod) (3.4.8)
+2026-01-20T15:43:24.989Z [INFO] #15 1.808 Collecting fastapi>=0.94.0 (from fastapi[all]>=0.94.0->runpod)
+2026-01-20T15:43:25.089Z [INFO] #15 1.831   Downloading fastapi-0.128.0-py3-none-any.whl.metadata (30 kB)
+2026-01-20T15:43:25.089Z [INFO] #15 1.844 Requirement already satisfied: filelock>=3.0.0 in /usr/local/lib/python3.10/dist-packages (from runpod) (3.13.1)
+2026-01-20T15:43:25.089Z [INFO] #15 1.883 Collecting paramiko>=3.3.1 (from runpod)
+2026-01-20T15:43:25.089Z [INFO] #15 1.906   Downloading paramiko-4.0.0-py3-none-any.whl.metadata (3.9 kB)
+2026-01-20T15:43:25.089Z [INFO] #15 1.908 Requirement already satisfied: prettytable>=3.9.0 in /usr/local/lib/python3.10/dist-packages (from runpod) (3.17.0)
+2026-01-20T15:43:25.089Z [INFO] #15 1.909 Requirement already satisfied: py-cpuinfo>=9.0.0 in /usr/local/lib/python3.10/dist-packages (from runpod) (9.0.0)
+2026-01-20T15:43:25.204Z [INFO] #15 1.939 Collecting inquirerpy==0.3.4 (from runpod)
+2026-01-20T15:43:25.204Z [INFO] #15 1.963   Downloading InquirerPy-0.3.4-py3-none-any.whl.metadata (8.1 kB)
+2026-01-20T15:43:25.204Z [INFO] #15 1.966 Requirement already satisfied: requests>=2.31.0 in /usr/local/lib/python3.10/dist-packages (from runpod) (2.31.0)
+2026-01-20T15:43:25.204Z [INFO] #15 1.966 Requirement already satisfied: tomli>=2.0.1 in /usr/local/lib/python3.10/dist-packages (from runpod) (2.0.1)
+2026-01-20T15:43:25.204Z [INFO] #15 2.001 Collecting tomlkit>=0.12.2 (from runpod)
+2026-01-20T15:43:25.204Z [INFO] #15 2.023   Downloading tomlkit-0.14.0-py3-none-any.whl.metadata (2.8 kB)
+2026-01-20T15:43:25.317Z [INFO] #15 2.055 Collecting tqdm-loggable>=0.1.4 (from runpod)
+2026-01-20T15:43:25.317Z [INFO] #15 2.079   Downloading tqdm_loggable-0.2-py3-none-any.whl.metadata (9.3 kB)
+2026-01-20T15:43:25.317Z [INFO] #15 2.081 Requirement already satisfied: urllib3>=1.26.6 in /usr/local/lib/python3.10/dist-packages (from runpod) (2.2.0)
+2026-01-20T15:43:25.317Z [INFO] #15 2.136 Collecting watchdog>=3.0.0 (from runpod)
+2026-01-20T15:43:25.448Z [INFO] #15 2.159   Downloading watchdog-6.0.0-py3-none-manylinux2014_x86_64.whl.metadata (44 kB)
+2026-01-20T15:43:25.448Z [INFO] #15 2.203 Collecting pfzy<0.4.0,>=0.3.1 (from inquirerpy==0.3.4->runpod)
+2026-01-20T15:43:25.448Z [INFO] #15 2.226   Downloading pfzy-0.3.4-py3-none-any.whl.metadata (4.9 kB)
+2026-01-20T15:43:25.448Z [INFO] #15 2.229 Requirement already satisfied: prompt-toolkit<4.0.0,>=3.0.1 in /usr/local/lib/python3.10/dist-packages (from inquirerpy==0.3.4->runpod) (3.0.43)
+2026-01-20T15:43:25.448Z [INFO] #15 2.232 Requirement already satisfied: wcwidth in /usr/local/lib/python3.10/dist-packages (from prompt-toolkit<4.0.0,>=3.0.1->inquirerpy==0.3.4->runpod) (0.2.13)
+2026-01-20T15:43:25.448Z [INFO] #15 2.267 Collecting aiohappyeyeballs>=2.5.0 (from aiohttp>=3.9.3->aiohttp[speedups]>=3.9.3->runpod)
+2026-01-20T15:43:25.562Z [INFO] #15 2.290   Downloading aiohappyeyeballs-2.6.1-py3-none-any.whl.metadata (5.9 kB)
+2026-01-20T15:43:25.562Z [INFO] #15 2.325 Collecting aiosignal>=1.4.0 (from aiohttp>=3.9.3->aiohttp[speedups]>=3.9.3->runpod)
+2026-01-20T15:43:25.562Z [INFO] #15 2.348   Downloading aiosignal-1.4.0-py3-none-any.whl.metadata (3.7 kB)
+2026-01-20T15:43:25.562Z [INFO] #15 2.381 Collecting async-timeout<6.0,>=4.0 (from aiohttp>=3.9.3->aiohttp[speedups]>=3.9.3->runpod)
+2026-01-20T15:43:25.682Z [INFO] #15 2.404   Downloading async_timeout-5.0.1-py3-none-any.whl.metadata (5.1 kB)
+2026-01-20T15:43:25.682Z [INFO] #15 2.406 Requirement already satisfied: attrs>=17.3.0 in /usr/local/lib/python3.10/dist-packages (from aiohttp>=3.9.3->aiohttp[speedups]>=3.9.3->runpod) (23.2.0)
+2026-01-20T15:43:25.682Z [INFO] #15 2.477 Collecting frozenlist>=1.1.1 (from aiohttp>=3.9.3->aiohttp[speedups]>=3.9.3->runpod)
+2026-01-20T15:43:25.682Z [INFO] #15 2.501   Downloading frozenlist-1.8.0-cp310-cp310-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl.metadata (20 kB)
+2026-01-20T15:43:25.893Z [INFO] #15 2.713 Collecting multidict<7.0,>=4.5 (from aiohttp>=3.9.3->aiohttp[speedups]>=3.9.3->runpod)
+2026-01-20T15:43:26.003Z [INFO] #15 2.737   Downloading multidict-6.7.0-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (5.3 kB)
+2026-01-20T15:43:26.003Z [INFO] #15 2.797 Collecting propcache>=0.2.0 (from aiohttp>=3.9.3->aiohttp[speedups]>=3.9.3->runpod)
+2026-01-20T15:43:26.003Z [INFO] #15 2.822   Downloading propcache-0.4.1-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (13 kB)
+2026-01-20T15:43:26.197Z [INFO] #15 3.016 Collecting yarl<2.0,>=1.17.0 (from aiohttp>=3.9.3->aiohttp[speedups]>=3.9.3->runpod)
+2026-01-20T15:43:26.302Z [INFO] #15 3.041   Downloading yarl-1.22.0-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (75 kB)
+2026-01-20T15:43:26.302Z [INFO] #15 3.054 Requirement already satisfied: typing-extensions>=4.1.0 in /usr/local/lib/python3.10/dist-packages (from multidict<7.0,>=4.5->aiohttp>=3.9.3->aiohttp[speedups]>=3.9.3->runpod) (4.15.0)
+2026-01-20T15:43:26.302Z [INFO] #15 3.055 Requirement already satisfied: idna>=2.0 in /usr/local/lib/python3.10/dist-packages (from yarl<2.0,>=1.17.0->aiohttp>=3.9.3->aiohttp[speedups]>=3.9.3->runpod) (3.6)
+2026-01-20T15:43:26.302Z [INFO] #15 3.097 Collecting aiodns>=3.3.0 (from aiohttp[speedups]>=3.9.3->runpod)
+2026-01-20T15:43:26.302Z [INFO] #15 3.121   Downloading aiodns-4.0.0-py3-none-any.whl.metadata (7.7 kB)
+2026-01-20T15:43:26.474Z [INFO] #15 3.167 Collecting Brotli>=1.2 (from aiohttp[speedups]>=3.9.3->runpod)
+2026-01-20T15:43:26.474Z [INFO] #15 3.192   Downloading brotli-1.2.0-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (6.1 kB)
+2026-01-20T15:43:26.474Z [INFO] #15 3.293 Collecting backports.zstd (from aiohttp[speedups]>=3.9.3->runpod)
+2026-01-20T15:43:26.598Z [INFO] #15 3.317   Downloading backports_zstd-1.3.0-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (6.9 kB)
+2026-01-20T15:43:26.598Z [INFO] #15 3.392 Collecting pycares<6,>=5.0.0 (from aiodns>=3.3.0->aiohttp[speedups]>=3.9.3->runpod)
+2026-01-20T15:43:26.598Z [INFO] #15 3.417   Downloading pycares-5.0.1-cp310-cp310-manylinux_2_26_x86_64.manylinux_2_28_x86_64.whl.metadata (4.1 kB)
+2026-01-20T15:43:26.753Z [INFO] #15 3.421 Requirement already satisfied: cffi>=1.5.0 in /usr/local/lib/python3.10/dist-packages (from pycares<6,>=5.0.0->aiodns>=3.3.0->aiohttp[speedups]>=3.9.3->runpod) (1.16.0)
+2026-01-20T15:43:26.886Z [INFO] #15 3.705 Collecting botocore<1.43.0,>=1.42.30 (from boto3>=1.26.165->runpod)
+2026-01-20T15:43:27.055Z [INFO] #15 3.730   Downloading botocore-1.42.30-py3-none-any.whl.metadata (5.9 kB)
+2026-01-20T15:43:27.055Z [INFO] #15 3.763 Collecting jmespath<2.0.0,>=0.7.1 (from boto3>=1.26.165->runpod)
+2026-01-20T15:43:27.055Z [INFO] #15 3.786   Downloading jmespath-1.0.1-py3-none-any.whl.metadata (7.6 kB)
+2026-01-20T15:43:27.055Z [INFO] #15 3.875 Collecting s3transfer<0.17.0,>=0.16.0 (from boto3>=1.26.165->runpod)
+2026-01-20T15:43:27.156Z [INFO] #15 3.898   Downloading s3transfer-0.16.0-py3-none-any.whl.metadata (1.7 kB)
+2026-01-20T15:43:27.156Z [INFO] #15 3.902 Requirement already satisfied: python-dateutil<3.0.0,>=2.1 in /usr/local/lib/python3.10/dist-packages (from botocore<1.43.0,>=1.42.30->boto3>=1.26.165->runpod) (2.8.2)
+2026-01-20T15:43:27.156Z [INFO] #15 3.946 Collecting urllib3>=1.26.6 (from runpod)
+2026-01-20T15:43:27.156Z [INFO] #15 3.976   Downloading urllib3-2.6.3-py3-none-any.whl.metadata (6.9 kB)
+2026-01-20T15:43:27.282Z [INFO] #15 3.981 Requirement already satisfied: six>=1.5 in /usr/lib/python3/dist-packages (from python-dateutil<3.0.0,>=2.1->botocore<1.43.0,>=1.42.30->boto3>=1.26.165->runpod) (1.16.0)
+2026-01-20T15:43:27.282Z [INFO] #15 4.101 Requirement already satisfied: pycparser in /usr/local/lib/python3.10/dist-packages (from cffi>=1.5.0->pycares<6,>=5.0.0->aiodns>=3.3.0->aiohttp[speedups]>=3.9.3->runpod) (2.21)
+2026-01-20T15:43:27.405Z [INFO] #15 4.147 Collecting starlette<0.51.0,>=0.40.0 (from fastapi>=0.94.0->fastapi[all]>=0.94.0->runpod)
+2026-01-20T15:43:27.405Z [INFO] #15 4.170   Downloading starlette-0.50.0-py3-none-any.whl.metadata (6.3 kB)
+2026-01-20T15:43:27.405Z [INFO] #15 4.173 Requirement already satisfied: pydantic>=2.7.0 in /usr/local/lib/python3.10/dist-packages (from fastapi>=0.94.0->fastapi[all]>=0.94.0->runpod) (2.12.5)
+2026-01-20T15:43:27.405Z [INFO] #15 4.201 Collecting annotated-doc>=0.0.2 (from fastapi>=0.94.0->fastapi[all]>=0.94.0->runpod)
+2026-01-20T15:43:27.405Z [INFO] #15 4.224   Downloading annotated_doc-0.0.4-py3-none-any.whl.metadata (6.6 kB)
+2026-01-20T15:43:27.507Z [INFO] #15 4.228 Requirement already satisfied: anyio<5,>=3.6.2 in /usr/local/lib/python3.10/dist-packages (from starlette<0.51.0,>=0.40.0->fastapi>=0.94.0->fastapi[all]>=0.94.0->runpod) (4.2.0)
+2026-01-20T15:43:27.507Z [INFO] #15 4.231 Requirement already satisfied: sniffio>=1.1 in /usr/local/lib/python3.10/dist-packages (from anyio<5,>=3.6.2->starlette<0.51.0,>=0.40.0->fastapi>=0.94.0->fastapi[all]>=0.94.0->runpod) (1.3.0)
+2026-01-20T15:43:27.507Z [INFO] #15 4.231 Requirement already satisfied: exceptiongroup>=1.0.2 in /usr/local/lib/python3.10/dist-packages (from anyio<5,>=3.6.2->starlette<0.51.0,>=0.40.0->fastapi>=0.94.0->fastapi[all]>=0.94.0->runpod) (1.2.0)
+2026-01-20T15:43:27.507Z [INFO] #15 4.266 Collecting fastapi-cli>=0.0.8 (from fastapi-cli[standard]>=0.0.8; extra == "all"->fastapi[all]>=0.94.0->runpod)
+2026-01-20T15:43:27.507Z [INFO] #15 4.291   Downloading fastapi_cli-0.0.20-py3-none-any.whl.metadata (6.5 kB)
+2026-01-20T15:43:27.507Z [INFO] #15 4.294 Requirement already satisfied: httpx<1.0.0,>=0.23.0 in /usr/local/lib/python3.10/dist-packages (from fastapi[all]>=0.94.0->runpod) (0.26.0)
+2026-01-20T15:43:27.507Z [INFO] #15 4.326 Collecting jinja2>=3.1.5 (from fastapi[all]>=0.94.0->runpod)
+2026-01-20T15:43:27.618Z [INFO] #15 4.349   Downloading jinja2-3.1.6-py3-none-any.whl.metadata (2.9 kB)
+2026-01-20T15:43:27.619Z [INFO] #15 4.381 Collecting python-multipart>=0.0.18 (from fastapi[all]>=0.94.0->runpod)
+2026-01-20T15:43:27.619Z [INFO] #15 4.404   Downloading python_multipart-0.0.21-py3-none-any.whl.metadata (1.8 kB)
+2026-01-20T15:43:27.619Z [INFO] #15 4.438 Collecting itsdangerous>=1.1.0 (from fastapi[all]>=0.94.0->runpod)
+2026-01-20T15:43:27.795Z [INFO] #15 4.461   Downloading itsdangerous-2.2.0-py3-none-any.whl.metadata (1.9 kB)
+2026-01-20T15:43:27.795Z [INFO] #15 4.463 Requirement already satisfied: pyyaml>=5.3.1 in /usr/local/lib/python3.10/dist-packages (from fastapi[all]>=0.94.0->runpod) (6.0.2)
+2026-01-20T15:43:27.795Z [INFO] #15 4.464 Requirement already satisfied: ujson!=4.0.2,!=4.1.0,!=4.2.0,!=4.3.0,!=5.0.0,!=5.1.0,>=4.0.1 in /usr/local/lib/python3.10/dist-packages (from fastapi[all]>=0.94.0->runpod) (5.11.0)
+2026-01-20T15:43:27.852Z [INFO] #15 4.671 Collecting orjson>=3.2.1 (from fastapi[all]>=0.94.0->runpod)
+2026-01-20T15:43:27.981Z [INFO] #15 4.695   Downloading orjson-3.11.5-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (41 kB)
+2026-01-20T15:43:27.981Z [INFO] #15 4.731 Collecting email-validator>=2.0.0 (from fastapi[all]>=0.94.0->runpod)
+2026-01-20T15:43:27.981Z [INFO] #15 4.754   Downloading email_validator-2.3.0-py3-none-any.whl.metadata (26 kB)
+2026-01-20T15:43:27.981Z [INFO] #15 4.800 Collecting uvicorn>=0.12.0 (from uvicorn[standard]>=0.12.0; extra == "all"->fastapi[all]>=0.94.0->runpod)
+2026-01-20T15:43:28.098Z [INFO] #15 4.824   Downloading uvicorn-0.40.0-py3-none-any.whl.metadata (6.7 kB)
+2026-01-20T15:43:28.098Z [INFO] #15 4.861 Collecting pydantic-settings>=2.0.0 (from fastapi[all]>=0.94.0->runpod)
+2026-01-20T15:43:28.098Z [INFO] #15 4.883   Downloading pydantic_settings-2.12.0-py3-none-any.whl.metadata (3.4 kB)
+2026-01-20T15:43:28.098Z [INFO] #15 4.917 Collecting pydantic-extra-types>=2.0.0 (from fastapi[all]>=0.94.0->runpod)
+2026-01-20T15:43:28.231Z [INFO] #15 4.940   Downloading pydantic_extra_types-2.11.0-py3-none-any.whl.metadata (4.0 kB)
+2026-01-20T15:43:28.231Z [INFO] #15 4.947 Requirement already satisfied: certifi in /usr/local/lib/python3.10/dist-packages (from httpx<1.0.0,>=0.23.0->fastapi[all]>=0.94.0->runpod) (2024.2.2)
+2026-01-20T15:43:28.231Z [INFO] #15 4.948 Requirement already satisfied: httpcore==1.* in /usr/local/lib/python3.10/dist-packages (from httpx<1.0.0,>=0.23.0->fastapi[all]>=0.94.0->runpod) (1.0.2)
+2026-01-20T15:43:28.231Z [INFO] #15 4.950 Requirement already satisfied: h11<0.15,>=0.13 in /usr/local/lib/python3.10/dist-packages (from httpcore==1.*->httpx<1.0.0,>=0.23.0->fastapi[all]>=0.94.0->runpod) (0.14.0)
+2026-01-20T15:43:28.231Z [INFO] #15 4.983 Collecting dnspython>=2.0.0 (from email-validator>=2.0.0->fastapi[all]>=0.94.0->runpod)
+2026-01-20T15:43:28.231Z [INFO] #15 5.008   Downloading dnspython-2.8.0-py3-none-any.whl.metadata (5.7 kB)
+2026-01-20T15:43:28.231Z [INFO] #15 5.051 Collecting typer>=0.15.1 (from fastapi-cli>=0.0.8->fastapi-cli[standard]>=0.0.8; extra == "all"->fastapi[all]>=0.94.0->runpod)
+2026-01-20T15:43:28.379Z [INFO] #15 5.074   Downloading typer-0.21.1-py3-none-any.whl.metadata (16 kB)
+2026-01-20T15:43:28.379Z [INFO] #15 5.123 Collecting rich-toolkit>=0.14.8 (from fastapi-cli>=0.0.8->fastapi-cli[standard]>=0.0.8; extra == "all"->fastapi[all]>=0.94.0->runpod)
+2026-01-20T15:43:28.379Z [INFO] #15 5.146   Downloading rich_toolkit-0.17.1-py3-none-any.whl.metadata (1.0 kB)
+2026-01-20T15:43:28.379Z [INFO] #15 5.199 Collecting fastapi-cloud-cli>=0.1.1 (from fastapi-cli[standard]>=0.0.8; extra == "all"->fastapi[all]>=0.94.0->runpod)
+2026-01-20T15:43:28.507Z [INFO] #15 5.222   Downloading fastapi_cloud_cli-0.11.0-py3-none-any.whl.metadata (3.2 kB)
+2026-01-20T15:43:28.507Z [INFO] #15 5.326 Collecting rignore>=0.5.1 (from fastapi-cloud-cli>=0.1.1->fastapi-cli[standard]>=0.0.8; extra == "all"->fastapi[all]>=0.94.0->runpod)
+2026-01-20T15:43:28.723Z [INFO] #15 5.351   Downloading rignore-0.7.6-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (4.2 kB)
+2026-01-20T15:43:28.723Z [INFO] #15 5.388 Collecting httpx<1.0.0,>=0.23.0 (from fastapi[all]>=0.94.0->runpod)
+2026-01-20T15:43:28.723Z [INFO] #15 5.410   Downloading httpx-0.28.1-py3-none-any.whl.metadata (7.1 kB)
+2026-01-20T15:43:28.723Z [INFO] #15 5.543 Collecting sentry-sdk>=2.20.0 (from fastapi-cloud-cli>=0.1.1->fastapi-cli[standard]>=0.0.8; extra == "all"->fastapi[all]>=0.94.0->runpod)
+2026-01-20T15:43:28.835Z [INFO] #15 5.566   Downloading sentry_sdk-2.50.0-py2.py3-none-any.whl.metadata (10 kB)
+2026-01-20T15:43:28.835Z [INFO] #15 5.654 Collecting fastar>=0.8.0 (from fastapi-cloud-cli>=0.1.1->fastapi-cli[standard]>=0.0.8; extra == "all"->fastapi[all]>=0.94.0->runpod)
+2026-01-20T15:43:28.950Z [INFO] #15 5.678   Downloading fastar-0.8.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (4.0 kB)
+2026-01-20T15:43:28.950Z [INFO] #15 5.689 Requirement already satisfied: MarkupSafe>=2.0 in /usr/local/lib/python3.10/dist-packages (from jinja2>=3.1.5->fastapi[all]>=0.94.0->runpod) (2.1.5)
+2026-01-20T15:43:28.950Z [INFO] #15 5.744 Collecting bcrypt>=3.2 (from paramiko>=3.3.1->runpod)
+2026-01-20T15:43:28.950Z [INFO] #15 5.769   Downloading bcrypt-5.0.0-cp39-abi3-manylinux_2_34_x86_64.whl.metadata (10 kB)
+2026-01-20T15:43:29.059Z [INFO] #15 5.815 Collecting invoke>=2.0 (from paramiko>=3.3.1->runpod)
+2026-01-20T15:43:29.059Z [INFO] #15 5.838   Downloading invoke-2.2.1-py3-none-any.whl.metadata (3.3 kB)
+2026-01-20T15:43:29.059Z [INFO] #15 5.878 Collecting pynacl>=1.5 (from paramiko>=3.3.1->runpod)
+2026-01-20T15:43:29.252Z [INFO] #15 5.901   Downloading pynacl-1.6.2-cp38-abi3-manylinux_2_34_x86_64.whl.metadata (10.0 kB)
+2026-01-20T15:43:29.252Z [INFO] #15 5.912 Requirement already satisfied: annotated-types>=0.6.0 in /usr/local/lib/python3.10/dist-packages (from pydantic>=2.7.0->fastapi>=0.94.0->fastapi[all]>=0.94.0->runpod) (0.7.0)
+2026-01-20T15:43:29.252Z [INFO] #15 5.912 Requirement already satisfied: pydantic-core==2.41.5 in /usr/local/lib/python3.10/dist-packages (from pydantic>=2.7.0->fastapi>=0.94.0->fastapi[all]>=0.94.0->runpod) (2.41.5)
+2026-01-20T15:43:29.252Z [INFO] #15 5.913 Requirement already satisfied: typing-inspection>=0.4.2 in /usr/local/lib/python3.10/dist-packages (from pydantic>=2.7.0->fastapi>=0.94.0->fastapi[all]>=0.94.0->runpod) (0.4.2)
+2026-01-20T15:43:29.252Z [INFO] #15 5.951 Collecting python-dotenv>=0.21.0 (from pydantic-settings>=2.0.0->fastapi[all]>=0.94.0->runpod)
+2026-01-20T15:43:29.252Z [INFO] #15 5.973   Downloading python_dotenv-1.2.1-py3-none-any.whl.metadata (25 kB)
+2026-01-20T15:43:29.252Z [INFO] #15 6.071 Collecting cffi>=1.5.0 (from pycares<6,>=5.0.0->aiodns>=3.3.0->aiohttp[speedups]>=3.9.3->runpod)
+2026-01-20T15:43:29.396Z [INFO] #15 6.094   Downloading cffi-2.0.0-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (2.6 kB)
+2026-01-20T15:43:29.396Z [INFO] #15 6.103 Requirement already satisfied: charset-normalizer<4,>=2 in /usr/local/lib/python3.10/dist-packages (from requests>=2.31.0->runpod) (3.3.2)
+2026-01-20T15:43:29.396Z [INFO] #15 6.215 Collecting rich>=13.7.1 (from rich-toolkit>=0.14.8->fastapi-cli>=0.0.8->fastapi-cli[standard]>=0.0.8; extra == "all"->fastapi[all]>=0.94.0->runpod)
+2026-01-20T15:43:29.517Z [INFO] #15 6.238   Downloading rich-14.2.0-py3-none-any.whl.metadata (18 kB)
+2026-01-20T15:43:29.517Z [INFO] #15 6.275 Collecting markdown-it-py>=2.2.0 (from rich>=13.7.1->rich-toolkit>=0.14.8->fastapi-cli>=0.0.8->fastapi-cli[standard]>=0.0.8; extra == "all"->fastapi[all]>=0.94.0->runpod)
+2026-01-20T15:43:29.517Z [INFO] #15 6.298   Downloading markdown_it_py-4.0.0-py3-none-any.whl.metadata (7.3 kB)
+2026-01-20T15:43:29.517Z [INFO] #15 6.303 Requirement already satisfied: pygments<3.0.0,>=2.13.0 in /usr/local/lib/python3.10/dist-packages (from rich>=13.7.1->rich-toolkit>=0.14.8->fastapi-cli>=0.0.8->fastapi-cli[standard]>=0.0.8; extra == "all"->fastapi[all]>=0.94.0->runpod) (2.17.2)
+2026-01-20T15:43:29.517Z [INFO] #15 6.336 Collecting mdurl~=0.1 (from markdown-it-py>=2.2.0->rich>=13.7.1->rich-toolkit>=0.14.8->fastapi-cli>=0.0.8->fastapi-cli[standard]>=0.0.8; extra == "all"->fastapi[all]>=0.94.0->runpod)
+2026-01-20T15:43:29.623Z [INFO] #15 6.359   Downloading mdurl-0.1.2-py3-none-any.whl.metadata (1.6 kB)
+2026-01-20T15:43:29.623Z [INFO] #15 6.379 Requirement already satisfied: tqdm>4.64 in /usr/local/lib/python3.10/dist-packages (from tqdm-loggable>=0.1.4->runpod) (4.67.1)
+2026-01-20T15:43:29.623Z [INFO] #15 6.384 Requirement already satisfied: shellingham>=1.3.0 in /usr/local/lib/python3.10/dist-packages (from typer>=0.15.1->fastapi-cli>=0.0.8->fastapi-cli[standard]>=0.0.8; extra == "all"->fastapi[all]>=0.94.0->runpod) (1.5.4)
+2026-01-20T15:43:29.623Z [INFO] #15 6.442 Collecting httptools>=0.6.3 (from uvicorn[standard]>=0.12.0; extra == "all"->fastapi[all]>=0.94.0->runpod)
+2026-01-20T15:43:29.726Z [INFO] #15 6.467   Downloading httptools-0.7.1-cp310-cp310-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl.metadata (3.5 kB)
+2026-01-20T15:43:29.726Z [INFO] #15 6.520 Collecting uvloop>=0.15.1 (from uvicorn[standard]>=0.12.0; extra == "all"->fastapi[all]>=0.94.0->runpod)
+2026-01-20T15:43:29.726Z [INFO] #15 6.546   Downloading uvloop-0.22.1-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (4.9 kB)
+2026-01-20T15:43:29.832Z [INFO] #15 6.623 Collecting watchfiles>=0.13 (from uvicorn[standard]>=0.12.0; extra == "all"->fastapi[all]>=0.94.0->runpod)
+2026-01-20T15:43:29.832Z [INFO] #15 6.651   Downloading watchfiles-1.1.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (4.9 kB)
+2026-01-20T15:43:29.950Z [INFO] #15 6.736 Collecting websockets>=10.4 (from uvicorn[standard]>=0.12.0; extra == "all"->fastapi[all]>=0.94.0->runpod)
+2026-01-20T15:43:29.950Z [INFO] #15 6.769   Downloading websockets-16.0-cp310-cp310-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl.metadata (6.8 kB)
+2026-01-20T15:43:30.064Z [INFO] #15 6.809 Downloading runpod-1.8.1-py3-none-any.whl (157 kB)
+2026-01-20T15:43:30.064Z [INFO] #15 6.859 Downloading InquirerPy-0.3.4-py3-none-any.whl (67 kB)
+2026-01-20T15:43:30.064Z [INFO] #15 6.883 Downloading colorama-0.4.6-py2.py3-none-any.whl (25 kB)
+2026-01-20T15:43:30.189Z [INFO] #15 6.925 Downloading pfzy-0.3.4-py3-none-any.whl (8.5 kB)
+2026-01-20T15:43:30.190Z [INFO] #15 6.950 Downloading aiohttp-3.13.3-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (1.7 MB)
+2026-01-20T15:43:30.190Z [INFO] #15 7.009    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.7/1.7 MB 29.4 MB/s  0:00:00
+2026-01-20T15:43:30.291Z [INFO] #15 7.032 Downloading async_timeout-5.0.1-py3-none-any.whl (6.2 kB)
+2026-01-20T15:43:30.291Z [INFO] #15 7.057 Downloading multidict-6.7.0-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (241 kB)
+2026-01-20T15:43:30.291Z [INFO] #15 7.082 Downloading yarl-1.22.0-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (346 kB)
+2026-01-20T15:43:30.291Z [INFO] #15 7.110 Downloading aiohappyeyeballs-2.6.1-py3-none-any.whl (15 kB)
+2026-01-20T15:43:30.395Z [INFO] #15 7.138 Downloading aiohttp_retry-2.9.1-py3-none-any.whl (10.0 kB)
+2026-01-20T15:43:30.395Z [INFO] #15 7.164 Downloading aiodns-4.0.0-py3-none-any.whl (11 kB)
+2026-01-20T15:43:30.395Z [INFO] #15 7.189 Downloading pycares-5.0.1-cp310-cp310-manylinux_2_26_x86_64.manylinux_2_28_x86_64.whl (222 kB)
+2026-01-20T15:43:30.395Z [INFO] #15 7.214 Downloading aiosignal-1.4.0-py3-none-any.whl (7.5 kB)
+2026-01-20T15:43:30.596Z [INFO] #15 7.239 Downloading backoff-2.2.1-py3-none-any.whl (15 kB)
+2026-01-20T15:43:30.596Z [INFO] #15 7.263 Downloading boto3-1.42.30-py3-none-any.whl (140 kB)
+2026-01-20T15:43:30.596Z [INFO] #15 7.290 Downloading botocore-1.42.30-py3-none-any.whl (14.6 MB)
+2026-01-20T15:43:30.696Z [INFO] #15 7.415    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 14.6/14.6 MB 117.7 MB/s  0:00:00
+2026-01-20T15:43:30.696Z [INFO] #15 7.439 Downloading jmespath-1.0.1-py3-none-any.whl (20 kB)
+2026-01-20T15:43:30.696Z [INFO] #15 7.463 Downloading s3transfer-0.16.0-py3-none-any.whl (86 kB)
+2026-01-20T15:43:30.696Z [INFO] #15 7.487 Downloading urllib3-2.6.3-py3-none-any.whl (131 kB)
+2026-01-20T15:43:30.696Z [INFO] #15 7.515 Downloading brotli-1.2.0-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (1.4 MB)
+2026-01-20T15:43:30.805Z [INFO] #15 7.527    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.4/1.4 MB 128.9 MB/s  0:00:00
+2026-01-20T15:43:30.805Z [INFO] #15 7.552 Downloading fastapi-0.128.0-py3-none-any.whl (103 kB)
+2026-01-20T15:43:30.805Z [INFO] #15 7.576 Downloading starlette-0.50.0-py3-none-any.whl (74 kB)
+2026-01-20T15:43:30.805Z [INFO] #15 7.600 Downloading annotated_doc-0.0.4-py3-none-any.whl (5.3 kB)
+2026-01-20T15:43:30.805Z [INFO] #15 7.624 Downloading email_validator-2.3.0-py3-none-any.whl (35 kB)
+2026-01-20T15:43:30.928Z [INFO] #15 7.648 Downloading dnspython-2.8.0-py3-none-any.whl (331 kB)
+2026-01-20T15:43:30.928Z [INFO] #15 7.674 Downloading fastapi_cli-0.0.20-py3-none-any.whl (12 kB)
+2026-01-20T15:43:30.928Z [INFO] #15 7.699 Downloading fastapi_cloud_cli-0.11.0-py3-none-any.whl (26 kB)
+2026-01-20T15:43:30.929Z [INFO] #15 7.723 Downloading httpx-0.28.1-py3-none-any.whl (73 kB)
+2026-01-20T15:43:30.929Z [INFO] #15 7.748 Downloading fastar-0.8.0-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (821 kB)
+2026-01-20T15:43:31.038Z [INFO] #15 7.756    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 821.3/821.3 kB 108.8 MB/s  0:00:00
+2026-01-20T15:43:31.039Z [INFO] #15 7.780 Downloading frozenlist-1.8.0-cp310-cp310-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl (219 kB)
+2026-01-20T15:43:31.039Z [INFO] #15 7.805 Downloading itsdangerous-2.2.0-py3-none-any.whl (16 kB)
+2026-01-20T15:43:31.039Z [INFO] #15 7.828 Downloading jinja2-3.1.6-py3-none-any.whl (134 kB)
+2026-01-20T15:43:31.039Z [INFO] #15 7.858 Downloading orjson-3.11.5-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (139 kB)
+2026-01-20T15:43:31.147Z [INFO] #15 7.883 Downloading paramiko-4.0.0-py3-none-any.whl (223 kB)
+2026-01-20T15:43:31.147Z [INFO] #15 7.911 Downloading bcrypt-5.0.0-cp39-abi3-manylinux_2_34_x86_64.whl (278 kB)
+2026-01-20T15:43:31.147Z [INFO] #15 7.941 Downloading invoke-2.2.1-py3-none-any.whl (160 kB)
+2026-01-20T15:43:31.147Z [INFO] #15 7.967 Downloading propcache-0.4.1-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (196 kB)
+2026-01-20T15:43:31.256Z [INFO] #15 7.992 Downloading pydantic_extra_types-2.11.0-py3-none-any.whl (74 kB)
+2026-01-20T15:43:31.256Z [INFO] #15 8.017 Downloading pydantic_settings-2.12.0-py3-none-any.whl (51 kB)
+2026-01-20T15:43:31.256Z [INFO] #15 8.041 Downloading pynacl-1.6.2-cp38-abi3-manylinux_2_34_x86_64.whl (1.4 MB)
+2026-01-20T15:43:31.256Z [INFO] #15 8.051    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.4/1.4 MB 138.8 MB/s  0:00:00
+2026-01-20T15:43:31.256Z [INFO] #15 8.075 Downloading cffi-2.0.0-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (216 kB)
+2026-01-20T15:43:31.359Z [INFO] #15 8.100 Downloading python_dotenv-1.2.1-py3-none-any.whl (21 kB)
+2026-01-20T15:43:31.359Z [INFO] #15 8.126 Downloading python_multipart-0.0.21-py3-none-any.whl (24 kB)
+2026-01-20T15:43:31.359Z [INFO] #15 8.150 Downloading rich_toolkit-0.17.1-py3-none-any.whl (31 kB)
+2026-01-20T15:43:31.359Z [INFO] #15 8.178 Downloading rich-14.2.0-py3-none-any.whl (243 kB)
+2026-01-20T15:43:31.485Z [INFO] #15 8.207 Downloading markdown_it_py-4.0.0-py3-none-any.whl (87 kB)
+2026-01-20T15:43:31.485Z [INFO] #15 8.235 Downloading mdurl-0.1.2-py3-none-any.whl (10.0 kB)
+2026-01-20T15:43:31.485Z [INFO] #15 8.263 Downloading rignore-0.7.6-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (959 kB)
+2026-01-20T15:43:31.485Z [INFO] #15 8.277    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 959.8/959.8 kB 95.9 MB/s  0:00:00
+2026-01-20T15:43:31.485Z [INFO] #15 8.304 Downloading sentry_sdk-2.50.0-py2.py3-none-any.whl (424 kB)
+2026-01-20T15:43:31.599Z [INFO] #15 8.333 Downloading tomlkit-0.14.0-py3-none-any.whl (39 kB)
+2026-01-20T15:43:31.599Z [INFO] #15 8.362 Downloading tqdm_loggable-0.2-py3-none-any.whl (9.3 kB)
+2026-01-20T15:43:31.599Z [INFO] #15 8.391 Downloading typer-0.21.1-py3-none-any.whl (47 kB)
+2026-01-20T15:43:31.599Z [INFO] #15 8.418 Downloading uvicorn-0.40.0-py3-none-any.whl (68 kB)
+2026-01-20T15:43:31.714Z [INFO] #15 8.449 Downloading httptools-0.7.1-cp310-cp310-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl (440 kB)
+2026-01-20T15:43:31.715Z [INFO] #15 8.491 Downloading uvloop-0.22.1-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (3.7 MB)
+2026-01-20T15:43:31.825Z [INFO] #15 8.534    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 3.7/3.7 MB 158.4 MB/s  0:00:00
+2026-01-20T15:43:31.825Z [INFO] #15 8.558 Downloading watchdog-6.0.0-py3-none-manylinux2014_x86_64.whl (79 kB)
+2026-01-20T15:43:31.825Z [INFO] #15 8.584 Downloading watchfiles-1.1.1-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (455 kB)
+2026-01-20T15:43:31.825Z [INFO] #15 8.615 Downloading websockets-16.0-cp310-cp310-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl (183 kB)
+2026-01-20T15:43:31.825Z [INFO] #15 8.644 Downloading backports_zstd-1.3.0-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (491 kB)
+2026-01-20T15:43:32.366Z [INFO] #15 9.185 Installing collected packages: Brotli, websockets, watchdog, uvloop, uvicorn, urllib3, tqdm-loggable, tomlkit, rignore, python-multipart, python-dotenv, propcache, pfzy, orjson, multidict, mdurl, jmespath, jinja2, itsdangerous, invoke, httptools, frozenlist, fastar, dnspython, colorama, cffi, bcrypt, backports.zstd, backoff, async-timeout, annotated-doc, aiohappyeyeballs, yarl, watchfiles, starlette, sentry-sdk, pynacl, pycares, markdown-it-py, inquirerpy, httpx, email-validator, botocore, aiosignal, s3transfer, rich, pydantic-settings, pydantic-extra-types, paramiko, fastapi, aiohttp, aiodns, typer, rich-toolkit, boto3, aiohttp-retry, fastapi-cloud-cli, fastapi-cli, runpod
+2026-01-20T15:43:32.569Z [INFO] #15 9.388   Attempting uninstall: urllib3
+2026-01-20T15:43:32.738Z [INFO] #15 9.389     Found existing installation: urllib3 2.2.0
+2026-01-20T15:43:32.738Z [INFO] #15 9.393     Uninstalling urllib3-2.2.0:
+2026-01-20T15:43:32.738Z [INFO] #15 9.407       Successfully uninstalled urllib3-2.2.0
+2026-01-20T15:43:32.743Z [INFO] #15 9.563   Attempting uninstall: jinja2
+2026-01-20T15:43:32.907Z [INFO] #15 9.563     Found existing installation: Jinja2 3.1.3
+2026-01-20T15:43:32.907Z [INFO] #15 9.566     Uninstalling Jinja2-3.1.3:
+2026-01-20T15:43:32.907Z [INFO] #15 9.576       Successfully uninstalled Jinja2-3.1.3
+2026-01-20T15:43:33.054Z [INFO] #15 9.873   Attempting uninstall: cffi
+2026-01-20T15:43:33.207Z [INFO] #15 9.874     Found existing installation: cffi 1.16.0
+2026-01-20T15:43:33.207Z [INFO] #15 9.876     Uninstalling cffi-1.16.0:
+2026-01-20T15:43:33.334Z [INFO] #15 10.15       Successfully uninstalled cffi-1.16.0
+2026-01-20T15:43:33.817Z [INFO] #15 10.64   Attempting uninstall: httpx
+2026-01-20T15:43:33.982Z [INFO] #15 10.64     Found existing installation: httpx 0.26.0
+2026-01-20T15:43:33.982Z [INFO] #15 10.64     Uninstalling httpx-0.26.0:
+2026-01-20T15:43:33.982Z [INFO] #15 10.65       Successfully uninstalled httpx-0.26.0
+2026-01-20T15:43:34.903Z [INFO] #15 11.72
+2026-01-20T15:43:35.075Z [INFO] #15 11.74 ERROR: pip's dependency resolver does not currently take into account all the packages that are installed. This behaviour is the source of the following dependency conflicts.
+2026-01-20T15:43:35.075Z [INFO] #15 11.74 paddlepaddle-gpu 3.0.0b2 requires nvidia-cublas-cu12==12.3.4.1; platform_system == "Linux" and platform_machine == "x86_64", but you have nvidia-cublas-cu12 12.1.3.1 which is incompatible.
+2026-01-20T15:43:35.075Z [INFO] #15 11.74 paddlepaddle-gpu 3.0.0b2 requires nvidia-cuda-nvrtc-cu12==12.3.107; platform_system == "Linux" and platform_machine == "x86_64", but you have nvidia-cuda-nvrtc-cu12 12.1.105 which is incompatible.
+2026-01-20T15:43:35.075Z [INFO] #15 11.74 paddlepaddle-gpu 3.0.0b2 requires nvidia-cuda-runtime-cu12==12.3.101; platform_system == "Linux" and platform_machine == "x86_64", but you have nvidia-cuda-runtime-cu12 12.1.105 which is incompatible.
+2026-01-20T15:43:35.075Z [INFO] #15 11.74 paddlepaddle-gpu 3.0.0b2 requires nvidia-cudnn-cu12==9.0.0.312; platform_system == "Linux" and platform_machine == "x86_64", but you have nvidia-cudnn-cu12 8.9.7.29 which is incompatible.
+2026-01-20T15:43:35.075Z [INFO] #15 11.74 paddlepaddle-gpu 3.0.0b2 requires nvidia-cufft-cu12==11.2.1.3; platform_system == "Linux" and platform_machine == "x86_64", but you have nvidia-cufft-cu12 11.0.2.54 which is incompatible.
+2026-01-20T15:43:35.075Z [INFO] #15 11.74 paddlepaddle-gpu 3.0.0b2 requires nvidia-curand-cu12==10.3.5.147; platform_system == "Linux" and platform_machine == "x86_64", but you have nvidia-curand-cu12 10.3.2.106 which is incompatible.
+2026-01-20T15:43:35.075Z [INFO] #15 11.74 paddlepaddle-gpu 3.0.0b2 requires nvidia-cusolver-cu12==11.6.1.9; platform_system == "Linux" and platform_machine == "x86_64", but you have nvidia-cusolver-cu12 11.4.5.107 which is incompatible.
+2026-01-20T15:43:35.075Z [INFO] #15 11.74 paddlepaddle-gpu 3.0.0b2 requires nvidia-cusparse-cu12==12.3.1.170; platform_system == "Linux" and platform_machine == "x86_64", but you have nvidia-cusparse-cu12 12.1.0.106 which is incompatible.
+2026-01-20T15:43:35.075Z [INFO] #15 11.74 torch 2.2.0 requires nvidia-cuda-cupti-cu12==12.1.105; platform_system == "Linux" and platform_machine == "x86_64", but you have nvidia-cuda-cupti-cu12 12.3.101 which is incompatible.
+2026-01-20T15:43:35.075Z [INFO] #15 11.74 torch 2.2.0 requires nvidia-cudnn-cu12==8.9.2.26; platform_system == "Linux" and platform_machine == "x86_64", but you have nvidia-cudnn-cu12 8.9.7.29 which is incompatible.
+2026-01-20T15:43:35.075Z [INFO] #15 11.74 torch 2.2.0 requires nvidia-nvtx-cu12==12.1.105; platform_system == "Linux" and platform_machine == "x86_64", but you have nvidia-nvtx-cu12 12.4.127 which is incompatible.
+2026-01-20T15:43:35.075Z [INFO] #15 11.74 Successfully installed Brotli-1.2.0 aiodns-4.0.0 aiohappyeyeballs-2.6.1 aiohttp-3.13.3 aiohttp-retry-2.9.1 aiosignal-1.4.0 annotated-doc-0.0.4 async-timeout-5.0.1 backoff-2.2.1 backports.zstd-1.3.0 bcrypt-5.0.0 boto3-1.42.30 botocore-1.42.30 cffi-2.0.0 colorama-0.4.6 dnspython-2.8.0 email-validator-2.3.0 fastapi-0.128.0 fastapi-cli-0.0.20 fastapi-cloud-cli-0.11.0 fastar-0.8.0 frozenlist-1.8.0 httptools-0.7.1 httpx-0.28.1 inquirerpy-0.3.4 invoke-2.2.1 itsdangerous-2.2.0 jinja2-3.1.6 jmespath-1.0.1 markdown-it-py-4.0.0 mdurl-0.1.2 multidict-6.7.0 orjson-3.11.5 paramiko-4.0.0 pfzy-0.3.4 propcache-0.4.1 pycares-5.0.1 pydantic-extra-types-2.11.0 pydantic-settings-2.12.0 pynacl-1.6.2 python-dotenv-1.2.1 python-multipart-0.0.21 rich-14.2.0 rich-toolkit-0.17.1 rignore-0.7.6 runpod-1.8.1 s3transfer-0.16.0 sentry-sdk-2.50.0 starlette-0.50.0 tomlkit-0.14.0 tqdm-loggable-0.2 typer-0.21.1 urllib3-2.6.3 uvicorn-0.40.0 uvloop-0.22.1 watchdog-6.0.0 watchfiles-1.1.1 websockets-16.0 yarl-1.22.0
+2026-01-20T15:43:35.075Z [INFO] #15 11.74 WARNING: Running pip as the 'root' user can result in broken permissions and conflicting behaviour with the system package manager, possibly rendering your system unusable. It is recommended to use a virtual environment instead: https://pip.pypa.io/warnings/venv. Use the --root-user-action option if you know what you are doing and want to suppress this warning.
+2026-01-20T15:43:35.796Z [INFO] #15 DONE 12.6s
+2026-01-20T15:43:35.947Z [INFO] #16 [10/11] RUN python -c "from paddleocr import PaddleOCRVL; pipeline = PaddleOCRVL(); print('Models downloaded successfully')"
+2026-01-20T15:43:37.118Z [INFO] #16 1.322 [33mChecking connectivity to the model hosters, this may take a while. To bypass this check, set `DISABLE_MODEL_SOURCE_CHECK` to `True`.[0m
+2026-01-20T15:43:42.355Z [INFO] #16 6.559 Error: Can not import paddle core while this file exists: /usr/local/lib/python3.10/dist-packages/paddle/base/libpaddle.so
+2026-01-20T15:43:42.514Z [INFO] #16 6.567 Traceback (most recent call last):
+2026-01-20T15:43:42.514Z [INFO] #16 6.567   File "<string>", line 1, in <module>
+2026-01-20T15:43:42.514Z [INFO] #16 6.567   File "/usr/local/lib/python3.10/dist-packages/paddleocr/_pipelines/paddleocr_vl.py", line 65, in __init__
+2026-01-20T15:43:42.514Z [INFO] #16 6.567     super().__init__(**kwargs)
+2026-01-20T15:43:42.514Z [INFO] #16 6.567   File "/usr/local/lib/python3.10/dist-packages/paddleocr/_pipelines/base.py", line 67, in __init__
+2026-01-20T15:43:42.514Z [INFO] #16 6.567     self.paddlex_pipeline = self._create_paddlex_pipeline()
+2026-01-20T15:43:42.514Z [INFO] #16 6.567   File "/usr/local/lib/python3.10/dist-packages/paddleocr/_pipelines/base.py", line 103, in _create_paddlex_pipeline
+2026-01-20T15:43:42.514Z [INFO] #16 6.567     kwargs = prepare_common_init_args(None, self._common_args)
+2026-01-20T15:43:42.514Z [INFO] #16 6.567   File "/usr/local/lib/python3.10/dist-packages/paddleocr/_common_args.py", line 63, in prepare_common_init_args
+2026-01-20T15:43:42.514Z [INFO] #16 6.567     device = get_default_device()
+2026-01-20T15:43:42.514Z [INFO] #16 6.567   File "/usr/local/lib/python3.10/dist-packages/paddlex/utils/device.py", line 53, in get_default_device
+2026-01-20T15:43:42.514Z [INFO] #16 6.567     import paddle
+2026-01-20T15:43:42.514Z [INFO] #16 6.567   File "/usr/local/lib/python3.10/dist-packages/paddle/__init__.py", line 37, in <module>
+2026-01-20T15:43:42.514Z [INFO] #16 6.567     from .base import core  # noqa: F401
+2026-01-20T15:43:42.514Z [INFO] #16 6.567   File "/usr/local/lib/python3.10/dist-packages/paddle/base/__init__.py", line 38, in <module>
+2026-01-20T15:43:42.514Z [INFO] #16 6.567     from . import (  # noqa: F401
+2026-01-20T15:43:42.514Z [INFO] #16 6.567   File "/usr/local/lib/python3.10/dist-packages/paddle/base/backward.py", line 28, in <module>
+2026-01-20T15:43:42.514Z [INFO] #16 6.567     from . import core, framework, log_helper, unique_name
+2026-01-20T15:43:42.514Z [INFO] #16 6.567   File "/usr/local/lib/python3.10/dist-packages/paddle/base/core.py", line 380, in <module>
+2026-01-20T15:43:42.514Z [INFO] #16 6.567     raise e
+2026-01-20T15:43:42.514Z [INFO] #16 6.567   File "/usr/local/lib/python3.10/dist-packages/paddle/base/core.py", line 267, in <module>
+2026-01-20T15:43:42.514Z [INFO] #16 6.567     from . import libpaddle
+2026-01-20T15:43:42.514Z [INFO] #16 6.567 ImportError: libcuda.so.1: cannot open shared object file: No such file or directory
+2026-01-20T15:43:42.934Z [INFO] #16 ERROR: process "/bin/bash -o pipefail -c python -c \"from paddleocr import PaddleOCRVL; pipeline = PaddleOCRVL(); print('Models downloaded successfully')\"" did not complete successfully: exit code: 1
+2026-01-20T15:43:42.942Z [INFO] ------
+2026-01-20T15:43:42.942Z [INFO]  > [10/11] RUN python -c "from paddleocr import PaddleOCRVL; pipeline = PaddleOCRVL(); print('Models downloaded successfully')":
+2026-01-20T15:43:42.942Z [INFO] 6.567     from .base import core  # noqa: F401
+2026-01-20T15:43:42.942Z [INFO] 6.567   File "/usr/local/lib/python3.10/dist-packages/paddle/base/__init__.py", line 38, in <module>
+2026-01-20T15:43:42.942Z [INFO] 6.567     from . import (  # noqa: F401
+2026-01-20T15:43:42.942Z [INFO] 6.567   File "/usr/local/lib/python3.10/dist-packages/paddle/base/backward.py", line 28, in <module>
+2026-01-20T15:43:42.942Z [INFO] 6.567     from . import core, framework, log_helper, unique_name
+2026-01-20T15:43:42.942Z [INFO] 6.567   File "/usr/local/lib/python3.10/dist-packages/paddle/base/core.py", line 380, in <module>
+2026-01-20T15:43:42.942Z [INFO] 6.567     raise e
+2026-01-20T15:43:42.942Z [INFO] 6.567   File "/usr/local/lib/python3.10/dist-packages/paddle/base/core.py", line 267, in <module>
+2026-01-20T15:43:42.942Z [INFO] 6.567     from . import libpaddle
+2026-01-20T15:43:42.942Z [INFO] 6.567 ImportError: libcuda.so.1: cannot open shared object file: No such file or directory
+2026-01-20T15:43:42.942Z [INFO] WARNING: current commit information was not captured by the build: git was not found in the system: exec: "git": executable file not found in $PATH
+2026-01-20T15:43:42.943Z [INFO] Dockerfile:67
+2026-01-20T15:43:42.943Z [INFO] --------------------
+2026-01-20T15:43:42.943Z [INFO]   65 |     # Pre-download models at build time (faster cold starts)
+2026-01-20T15:43:42.943Z [INFO]   66 |     # This runs the pipeline once to trigger model downloads
+2026-01-20T15:43:42.943Z [INFO]   67 | >>> RUN python -c "from paddleocr import PaddleOCRVL; pipeline = PaddleOCRVL(); print('Models downloaded successfully')"
+2026-01-20T15:43:42.943Z [INFO]   68 |
+2026-01-20T15:43:42.943Z [INFO]   69 |     # Copy handler
+2026-01-20T15:43:42.943Z [ERROR] ERROR: failed to build: failed to solve: process "/bin/bash -o pipefail -c python -c \"from paddleocr import PaddleOCRVL; pipeline = PaddleOCRVL(); print('Models downloaded successfully')\"" did not complete successfully: exit code: 1
+2026-01-20T15:43:42.952Z [ERROR] Build exceeded maximum time limit of 1800 seconds (30.0 minutes). Build terminated.
+2026-01-20T15:43:42.969Z [ERROR] None
+Build timeout exceeded

@@ -1,14 +1,15 @@
 # PaddleOCR-VL RunPod Serverless Container (vLLM Backend)
 #
 # Architecture:
-#   paddleocr genai_server (vLLM, port 8080) - VLM inference with continuous batching
+#   vllm serve PaddleOCR-VL (background, port 8080) - VLM inference with continuous batching
 #   handler.py (RunPod serverless) - uses PaddleOCRVL pipeline client:
 #     1. PP-DocLayoutV2 layout detection (CPU, fast)
 #     2. Crops → vLLM server at localhost:8080 (batched)
 #     3. Post-processing → markdown
 #
-# Strategy: PaddlePaddle base + prebuilt flash-attn wheel + paddleocr genai_server deps
-# flash-attn must be installed BEFORE install_genai_server_deps to avoid nvcc compilation
+# Strategy: PaddlePaddle base for pipeline client, pip install vllm for server
+# Bypasses paddleocr install_genai_server_deps (broken in Docker builds)
+# Uses vllm serve directly per https://docs.vllm.ai/projects/recipes/en/latest/PaddlePaddle/PaddleOCR-VL.html
 
 FROM paddlepaddle/paddle:3.2.2-gpu-cuda12.6-cudnn9.5
 
@@ -30,18 +31,14 @@ RUN apt-get update && apt-get install -y \
 # Upgrade pip
 RUN pip install --upgrade pip setuptools wheel
 
-# Install PaddleOCR with doc-parser (includes VL model + genai_server CLI)
+# Install PaddleOCR with doc-parser (pipeline client for layout detection + post-processing)
 RUN pip install --ignore-installed "paddleocr[doc-parser]==3.3.3"
 
-# Install prebuilt flash-attn wheel FIRST (avoids nvcc compilation during build)
-# Python 3.10, CUDA 12.4 (forward-compatible with 12.6 runtime), torch 2.8
+# Install prebuilt flash-attn (avoids nvcc compilation - no GPU in build environment)
 RUN pip install https://github.com/mjun0812/flash-attention-prebuild-wheels/releases/download/v0.3.14/flash_attn-2.8.2%2Bcu124torch2.8-cp310-cp310-linux_x86_64.whl
 
-# git is required by vLLM's pip install (separate layer to bust cache)
-RUN apt-get update && apt-get install -y git && rm -rf /var/lib/apt/lists/*
-
-# Now install genai_server dependencies (vLLM) - flash-attn already satisfied
-RUN paddleocr install_genai_server_deps vllm
+# Install vLLM directly (serves PaddleOCR-VL model via OpenAI-compatible API)
+RUN pip install vllm
 
 # Install RunPod SDK
 RUN pip install runpod requests

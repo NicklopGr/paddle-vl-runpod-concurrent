@@ -7,8 +7,8 @@
 #     2. Crops → vLLM server at localhost:8080 (batched)
 #     3. Post-processing → markdown
 #
-# Strategy: PaddlePaddle base + install genai_server deps (vLLM) via paddleocr CLI
-# Uses separate venv for vLLM server to avoid dependency conflicts
+# Strategy: PaddlePaddle base + prebuilt flash-attn wheel + paddleocr genai_server deps
+# flash-attn must be installed BEFORE install_genai_server_deps to avoid nvcc compilation
 
 FROM paddlepaddle/paddle:3.2.2-gpu-cuda12.6-cudnn9.5
 
@@ -32,8 +32,11 @@ RUN pip install --upgrade pip setuptools wheel
 # Install PaddleOCR with doc-parser (includes VL model + genai_server CLI)
 RUN pip install --ignore-installed "paddleocr[doc-parser]==3.3.3"
 
-# Install genai_server dependencies (vLLM + flash-attn)
-# This registers the 'genai_server' subcommand in paddleocr CLI
+# Install prebuilt flash-attn wheel FIRST (avoids nvcc compilation during build)
+# Python 3.10, CUDA 12.6, torch 2.8
+RUN pip install https://github.com/mjun0812/flash-attention-prebuild-wheels/releases/download/v0.3.14/flash_attn-2.8.2+cu126torch2.8-cp310-cp310-linux_x86_64.whl
+
+# Now install genai_server dependencies (vLLM) - flash-attn already satisfied
 RUN paddleocr install_genai_server_deps vllm
 
 # Install RunPod SDK

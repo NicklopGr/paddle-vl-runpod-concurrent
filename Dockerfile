@@ -7,8 +7,8 @@
 #     2. Crops → vLLM server at localhost:8080 (batched)
 #     3. Post-processing → markdown
 #
-# Strategy: PaddlePaddle base (known working) + install vLLM on top
-# Avoids torch/NCCL conflicts from using the Baidu vLLM server image
+# Strategy: PaddlePaddle base + install genai_server deps (vLLM) via paddleocr CLI
+# Uses separate venv for vLLM server to avoid dependency conflicts
 
 FROM paddlepaddle/paddle:3.2.2-gpu-cuda12.6-cudnn9.5
 
@@ -29,11 +29,12 @@ RUN apt-get update && apt-get install -y \
 # Upgrade pip
 RUN pip install --upgrade pip setuptools wheel
 
-# Install PaddleOCR with doc-parser (includes VL model + genai_server)
+# Install PaddleOCR with doc-parser (includes VL model + genai_server CLI)
 RUN pip install --ignore-installed "paddleocr[doc-parser]==3.3.3"
 
-# Install vLLM (required by paddleocr genai_server --backend vllm)
-RUN pip install vllm
+# Install genai_server dependencies (vLLM + flash-attn)
+# This registers the 'genai_server' subcommand in paddleocr CLI
+RUN paddleocr install_genai_server_deps vllm
 
 # Install RunPod SDK
 RUN pip install runpod requests
@@ -50,5 +51,6 @@ ENV CUDA_VISIBLE_DEVICES=0
 ENV PADDLE_INFERENCE_MEMORY_OPTIM=1
 ENV PYTHONUNBUFFERED=1
 ENV RUNPOD_DEBUG_LEVEL=INFO
+ENV DISABLE_MODEL_SOURCE_CHECK=True
 
 CMD ["bash", "start.sh"]

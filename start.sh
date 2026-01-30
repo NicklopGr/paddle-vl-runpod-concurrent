@@ -6,6 +6,7 @@ export VLLM_DISABLE_MODEL_SOURCE_CHECK=1
 # Start vLLM server directly (serves PaddleOCR-VL via OpenAI-compatible API)
 # Per: https://docs.vllm.ai/projects/recipes/en/latest/PaddlePaddle/PaddleOCR-VL.html
 vllm serve PaddlePaddle/PaddleOCR-VL \
+  --trust-remote-code \
   --host 0.0.0.0 \
   --port 8080 \
   --max-num-batched-tokens 16384 \

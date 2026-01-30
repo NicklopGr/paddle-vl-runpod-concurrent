@@ -67,7 +67,8 @@ def load_pipeline():
 
     from paddleocr import PaddleOCRVL
     paddle_vl_pipeline = PaddleOCRVL(
-        pipeline_config="/app/pipeline_config_vllm.yaml"
+        vl_rec_backend="vllm-server",
+        vl_rec_server_url="http://localhost:8080/v1",
     )
 
     elapsed = time.time() - start

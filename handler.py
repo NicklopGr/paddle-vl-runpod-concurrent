@@ -1,18 +1,22 @@
 """
-PaddleOCR-VL RunPod Serverless Handler (vLLM Backend)
+PaddleOCR-VL RunPod Serverless Handler (Concurrent Version)
 
-Architecture:
-  - paddleocr genai_server runs vLLM with PaddleOCR-VL-0.9B (continuous batching)
-  - This handler uses PaddleOCRVL pipeline client which:
-    1. Runs PP-DocLayoutV2 layout detection (CPU)
-    2. Sends cropped regions to vLLM server at localhost:8080
-    3. Assembles markdown output
+Same pipeline as paddle-vl-runpod but with in-handler concurrency support.
+Multiple jobs can run simultaneously on the same GPU worker.
+
+Key differences from original:
+- async def handler() instead of sync
+- concurrency_modifier returns 20 (model uses ~8GB of 48GB GPU)
+- Accepts image_urls[] in addition to images_base64[] (eliminates 9MB body limit)
+- Optional asyncio.Lock for pipeline.predict() via PADDLE_VL_SERIALIZE env var
 
 Input (URL mode - preferred):
 {
     "input": {
-        "image_urls": ["https://...", ...],
+        "image_urls": ["https://...", "https://...", ...],
+        // Optional: skip handler-side resize
         "skip_resize": false,
+        // Optional: warmup-only request
         "warmup": true
     }
 }
@@ -20,12 +24,13 @@ Input (URL mode - preferred):
 Input (base64 mode - backward compatible):
 {
     "input": {
-        "images_base64": ["base64_1", ...],
-        "image_base64": "base64_single"
+        "images_base64": ["base64_1", "base64_2", ...],
+        "image_base64": "base64_single",
+        "skip_resize": false
     }
 }
 
-Output: { status, result: { pages: [{page_number, markdown, parsing_res_list}], ocrProvider, processingTime } }
+Output: Same as original handler
 """
 
 import runpod
@@ -36,44 +41,94 @@ import os
 import time
 import warnings
 import requests
+from concurrent.futures import ThreadPoolExecutor
 from PIL import Image
 import io
 import numpy as np
 
 # ============================================================================
-# PERFORMANCE OPTIMIZATIONS (vLLM backend v2)
+# PERFORMANCE OPTIMIZATIONS - Set before any PaddlePaddle imports
 # ============================================================================
 
 os.environ["PADDLEX_SKIP_MODEL_CHECK"] = "1"
+os.environ.setdefault("DISABLE_MODEL_SOURCE_CHECK", "True")
+
 warnings.filterwarnings("ignore", message=".*Non compatible API.*")
 warnings.filterwarnings("ignore", category=Warning, module="paddle.utils.decorator_utils")
 
-# Global pipeline - loaded once
+# Global pipeline - loaded once at container startup
 paddle_vl_pipeline = None
 
-# Serialization lock for pipeline.predict()
+# Optional serialization lock for pipeline.predict()
+# Enable with PADDLE_VL_SERIALIZE=true if pipeline isn't thread-safe
 _predict_lock: asyncio.Lock | None = None
 SERIALIZE_PREDICT = os.environ.get("PADDLE_VL_SERIALIZE", "true").lower() == "true"
 
+# Thread pool for parallel image downloads
+_download_pool = ThreadPoolExecutor(max_workers=8)
+
+# Network volume path for model caching
+NETWORK_VOLUME_PATH = os.environ.get("RUNPOD_VOLUME_PATH", "/runpod-volume")
+MODEL_CACHE_DIR = os.environ.get(
+    "PADDLE_VL_CACHE_DIR",
+    os.path.join(NETWORK_VOLUME_PATH, "paddle_models"),
+)
+
+
+def setup_model_cache():
+    """Configure model cache directory for faster cold starts"""
+    if os.path.exists(NETWORK_VOLUME_PATH) and os.access(NETWORK_VOLUME_PATH, os.W_OK):
+        os.makedirs(MODEL_CACHE_DIR, exist_ok=True)
+        os.environ["PADDLE_HOME"] = MODEL_CACHE_DIR
+        os.environ["PADDLEOCR_HOME"] = MODEL_CACHE_DIR
+        os.environ["HF_HOME"] = os.path.join(MODEL_CACHE_DIR, "huggingface")
+        os.environ["HF_HUB_CACHE"] = os.path.join(MODEL_CACHE_DIR, "huggingface", "hub")
+        print(f"[PaddleOCR-VL] Using network volume cache: {MODEL_CACHE_DIR}")
+        try:
+            cached_items = os.listdir(MODEL_CACHE_DIR)
+            if cached_items:
+                print(f"[PaddleOCR-VL] Cached items: {cached_items}")
+            else:
+                print("[PaddleOCR-VL] Cache is empty - first run will download models")
+        except Exception as e:
+            print(f"[PaddleOCR-VL] Could not list cache: {e}")
+        return True
+    else:
+        print("[PaddleOCR-VL] No network volume found, using container storage")
+        return False
+
 
 def load_pipeline():
-    """Load PaddleOCR-VL pipeline with vLLM backend config"""
+    """Load PaddleOCR-VL pipeline (runs once at container startup)"""
     global paddle_vl_pipeline
     if paddle_vl_pipeline is not None:
         return paddle_vl_pipeline
 
-    print("[PaddleOCR-VL] Loading pipeline with vLLM backend...")
+    setup_model_cache()
+
+    print("[PaddleOCR-VL] Loading pipeline...")
     start = time.time()
 
     from paddleocr import PaddleOCRVL
-    paddle_vl_pipeline = PaddleOCRVL(
-        vl_rec_backend="vllm-server",
-        vl_rec_server_url="http://localhost:8080/v1",
-        vl_rec_api_model_name="PaddlePaddle/PaddleOCR-VL",
-    )
+    paddle_vl_pipeline = PaddleOCRVL()
 
     elapsed = time.time() - start
-    print(f"[PaddleOCR-VL] Pipeline loaded in {elapsed:.2f}s (vLLM backend)")
+    print(f"[PaddleOCR-VL] Pipeline loaded in {elapsed:.2f}s")
+
+    # Run a dummy inference to warm up vLLM (avoids ~35s penalty on first real job)
+    try:
+        warmup_start = time.time()
+        dummy_img = Image.new("RGB", (100, 100), color=(255, 255, 255))
+        with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp:
+            dummy_img.save(tmp.name, "PNG")
+            dummy_path = tmp.name
+        for _ in paddle_vl_pipeline.predict(dummy_path):
+            pass
+        os.unlink(dummy_path)
+        print(f"[PaddleOCR-VL] Warmup inference done in {time.time() - warmup_start:.2f}s")
+    except Exception as e:
+        print(f"[PaddleOCR-VL] Warmup inference failed (non-fatal): {e}")
+
     return paddle_vl_pipeline
 
 
@@ -122,7 +177,7 @@ def download_image(url: str) -> bytes:
 
 
 def process_single_image(pipeline, image_bytes: bytes, page_number: int, skip_resize: bool = False) -> dict:
-    """Process a single image and return markdown + structured output"""
+    """Process a single image (from bytes) and return markdown + structured output"""
     image = Image.open(io.BytesIO(image_bytes))
 
     if image.mode != 'RGB':
@@ -190,7 +245,7 @@ def process_single_image(pipeline, image_bytes: bytes, page_number: int, skip_re
 
 
 async def process_single_image_async(pipeline, image_bytes: bytes, page_number: int, skip_resize: bool = False) -> dict:
-    """Async wrapper with optional serialization lock"""
+    """Async wrapper around process_single_image with optional serialization lock"""
     global _predict_lock
 
     if SERIALIZE_PREDICT:
@@ -207,7 +262,14 @@ async def process_single_image_async(pipeline, image_bytes: bytes, page_number: 
 
 
 async def handler(event):
-    """RunPod serverless handler (async, concurrent-capable)"""
+    """
+    RunPod serverless handler function (async, concurrent-capable)
+
+    Accepts:
+    - image_urls: Array of URLs to download images from (preferred, no size limit)
+    - images_base64: Array of base64 encoded images (backward compatible)
+    - image_base64: Single base64 encoded image
+    """
     start_time = time.time()
 
     try:
@@ -220,7 +282,7 @@ async def handler(event):
                 "status": "success",
                 "result": {
                     "warmup": True,
-                    "backend": "vllm",
+                    "cache_dir": MODEL_CACHE_DIR,
                     "concurrent": True,
                     "serialize_predict": SERIALIZE_PREDICT
                 }
@@ -231,12 +293,15 @@ async def handler(event):
         # Collect image bytes from URLs or base64
         image_bytes_list: list[bytes] = []
 
-        # Priority 1: image_urls (preferred)
+        # Priority 1: image_urls (preferred - no body size limit)
         image_urls = job_input.get("image_urls", [])
         if image_urls:
-            print(f"[PaddleOCR-VL] Downloading {len(image_urls)} images from URLs...")
-            for url in image_urls:
-                image_bytes_list.append(download_image(url))
+            print(f"[PaddleOCR-VL] Downloading {len(image_urls)} images from URLs (parallel)...")
+            dl_start = time.time()
+            loop = asyncio.get_event_loop()
+            futures = [loop.run_in_executor(_download_pool, download_image, url) for url in image_urls]
+            image_bytes_list = list(await asyncio.gather(*futures))
+            print(f"[PaddleOCR-VL] All {len(image_urls)} images downloaded in {time.time() - dl_start:.2f}s")
 
         # Priority 2: images_base64 (backward compatible)
         if not image_bytes_list:
@@ -256,10 +321,12 @@ async def handler(event):
         if skip_resize:
             print(f"[PaddleOCR-VL] skip_resize=True (client handled sizing)")
 
-        print(f"[PaddleOCR-VL] Processing {len(image_bytes_list)} page(s) (vLLM backend)")
+        print(f"[PaddleOCR-VL] Processing {len(image_bytes_list)} page(s) (concurrent handler)")
 
         pipeline = load_pipeline()
 
+        # Process pages sequentially within a single job
+        # (GPU serializes naturally, lock protects pipeline state across concurrent jobs)
         pages = []
         for i, img_bytes in enumerate(image_bytes_list):
             page_start = time.time()
@@ -276,7 +343,7 @@ async def handler(event):
             "status": "success",
             "result": {
                 "pages": pages,
-                "ocrProvider": "paddleocr-vl-vllm",
+                "ocrProvider": "paddleocr-vl",
                 "processingTime": processing_time
             }
         }
@@ -295,12 +362,14 @@ async def handler(event):
 
 def concurrency_modifier(current_concurrency: int) -> int:
     """
-    Allow up to 20 concurrent jobs.
-    vLLM handles batching internally, so concurrent requests are efficient.
+    Allow up to 20 concurrent jobs on this worker.
+    PaddleOCR-VL uses ~8GB of 48GB GPU, leaving plenty of room.
+    GPU work serializes naturally; CPU preprocessing/postprocessing overlaps.
     """
     return 20
 
 
+# RunPod serverless start with concurrency support
 runpod.serverless.start({
     "handler": handler,
     "concurrency_modifier": concurrency_modifier

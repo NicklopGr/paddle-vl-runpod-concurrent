@@ -32,12 +32,41 @@ def setup_model_cache() -> bool:
 
 def main() -> None:
     setup_model_cache()
+
+    # Also set vLLM cache to network volume
+    network_volume_path = os.environ.get("RUNPOD_VOLUME_PATH", "/runpod-volume")
+    if os.path.exists(network_volume_path):
+        vllm_cache = os.path.join(network_volume_path, "vllm_cache")
+        os.makedirs(vllm_cache, exist_ok=True)
+        os.environ.setdefault("VLLM_CACHE_ROOT", vllm_cache)
+        print(f"[Warmup] vLLM cache dir: {vllm_cache}")
+
+    os.environ.setdefault("DISABLE_MODEL_SOURCE_CHECK", "True")
+
     start = time.time()
     from paddleocr import PaddleOCRVL
 
-    _ = PaddleOCRVL()
+    pipeline = PaddleOCRVL()
     elapsed = time.time() - start
     print(f"[Warmup] Models ready in {elapsed:.2f}s")
+
+    # Run a dummy inference to populate torch.compile cache
+    import tempfile
+    from PIL import Image
+
+    try:
+        warmup_start = time.time()
+        dummy_img = Image.new("RGB", (100, 100), color=(255, 255, 255))
+        with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp:
+            dummy_img.save(tmp.name, "PNG")
+            dummy_path = tmp.name
+        for _ in pipeline.predict(dummy_path):
+            pass
+        os.unlink(dummy_path)
+        print(f"[Warmup] Dummy inference done in {time.time() - warmup_start:.2f}s")
+        print(f"[Warmup] torch.compile cache should now be populated on network volume")
+    except Exception as e:
+        print(f"[Warmup] Dummy inference failed (non-fatal): {e}")
 
 
 if __name__ == "__main__":

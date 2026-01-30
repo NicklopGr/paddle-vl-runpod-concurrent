@@ -1,15 +1,17 @@
-# PaddleOCR-VL RunPod Serverless Container (vLLM Backend)
+# PaddleOCR-VL RunPod Serverless Container (Concurrent Version)
 #
-# Architecture:
-#   vllm serve PaddleOCR-VL (background, port 8080) - VLM inference with continuous batching
-#   handler.py (RunPod serverless) - uses PaddleOCRVL pipeline client:
-#     1. PP-DocLayoutV2 layout detection (CPU, fast)
-#     2. Crops → vLLM server at localhost:8080 (batched)
-#     3. Post-processing → markdown
+# Same as paddle-vl-runpod but with concurrency_modifier for in-handler concurrency.
+# Multiple jobs can run simultaneously on the same GPU worker.
 #
-# Strategy: PaddlePaddle base for pipeline client, pip install vllm for server
-# Bypasses paddleocr install_genai_server_deps (broken in Docker builds)
-# Uses vllm serve directly per https://docs.vllm.ai/projects/recipes/en/latest/PaddlePaddle/PaddleOCR-VL.html
+# Uses official PaddlePaddle 3.2.2 image with CUDA 12.6 + cuDNN 9.5
+# PaddleOCR 3.3.3 (latest as of Jan 26, 2026)
+#
+# Hardware Requirements:
+# - GPU with compute capability >= 7.0 (Volta or newer)
+# - Recommended: Ampere+ (RTX 30xx, A10G, A100, etc.)
+# - VRAM: ~3-4 GB with Flash Attention, ~40 GB without
+#
+# GPU Driver Requirements: >= 550.54.14 (Linux)
 
 FROM paddlepaddle/paddle:3.2.2-gpu-cuda12.6-cudnn9.5
 
@@ -24,36 +26,33 @@ RUN apt-get update && apt-get install -y \
     libxrender-dev \
     libgomp1 \
     poppler-utils \
-    curl \
-    git \
     && rm -rf /var/lib/apt/lists/*
 
 # Upgrade pip
 RUN pip install --upgrade pip setuptools wheel
 
-# Install PaddleOCR with doc-parser (pipeline client for layout detection + post-processing)
+# Install PaddleOCR 3.3.3 with doc-parser (includes VL model)
 RUN pip install --ignore-installed "paddleocr[doc-parser]==3.3.3"
 
-# Install vLLM (includes compatible flash-attn as dependency)
-# Do NOT install flash-attn separately - ABI mismatch with vLLM's torch causes
-# "undefined symbol: _ZNK3c106SymInt6sym_neERKS0_" at runtime
-RUN pip install vllm
-
-# Install RunPod SDK
+# Install RunPod SDK and requests (for URL downloading)
 RUN pip install runpod requests
 
-# Pre-download layout model so cold start doesn't fetch it
-RUN python -c "from paddleocr import PaddleOCRVL; print('imports ok')" || true
+# Copy handler and warmup scripts
+COPY handler.py warmup.py ./
 
-COPY pipeline_config_vllm.yaml /app/
-COPY handler.py /app/
-COPY start.sh /app/
-RUN chmod +x /app/start.sh
-
+# Set environment variables for optimal performance
 ENV CUDA_VISIBLE_DEVICES=0
 ENV PADDLE_INFERENCE_MEMORY_OPTIM=1
-ENV PYTHONUNBUFFERED=1
-ENV RUNPOD_DEBUG_LEVEL=INFO
-ENV VLLM_DISABLE_MODEL_SOURCE_CHECK=1
 
-CMD ["bash", "start.sh"]
+# Skip model source connectivity checks (~12s savings on cold start)
+ENV DISABLE_MODEL_SOURCE_CHECK=True
+
+# Persist vLLM torch.compile cache on network volume (~32s savings on subsequent cold starts)
+ENV VLLM_CACHE_ROOT=/runpod-volume/vllm_cache
+
+# Default: serialize pipeline.predict() calls (safe default)
+# Set to "false" if you confirm pipeline is thread-safe
+ENV PADDLE_VL_SERIALIZE=true
+
+# RunPod serverless entrypoint
+CMD ["python", "-u", "handler.py"]

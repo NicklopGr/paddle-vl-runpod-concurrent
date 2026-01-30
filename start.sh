@@ -3,6 +3,19 @@ set -e
 
 export VLLM_DISABLE_MODEL_SOURCE_CHECK=1
 
+# Use network volume for model cache (faster cold starts)
+VOLUME_PATH="${RUNPOD_VOLUME_PATH:-/runpod-volume}"
+if [ -d "$VOLUME_PATH" ]; then
+  export HF_HOME="$VOLUME_PATH/huggingface"
+  export HF_HUB_CACHE="$VOLUME_PATH/huggingface/hub"
+  export PADDLE_HOME="$VOLUME_PATH/paddle_models"
+  export PADDLEOCR_HOME="$VOLUME_PATH/paddle_models"
+  mkdir -p "$HF_HOME" "$HF_HUB_CACHE" "$PADDLE_HOME"
+  echo "[start.sh] Using network volume cache: $VOLUME_PATH"
+else
+  echo "[start.sh] No network volume found, using container storage"
+fi
+
 # Start vLLM server directly (serves PaddleOCR-VL via OpenAI-compatible API)
 # Per: https://docs.vllm.ai/projects/recipes/en/latest/PaddlePaddle/PaddleOCR-VL.html
 vllm serve PaddlePaddle/PaddleOCR-VL \

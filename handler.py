@@ -69,6 +69,7 @@ def load_pipeline():
     paddle_vl_pipeline = PaddleOCRVL(
         vl_rec_backend="vllm-server",
         vl_rec_server_url="http://localhost:8080/v1",
+        vl_rec_api_model_name="PaddlePaddle/PaddleOCR-VL",
     )
 
     elapsed = time.time() - start

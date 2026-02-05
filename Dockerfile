@@ -22,10 +22,9 @@ WORKDIR /app
 # Install RunPod SDK
 RUN pip install runpod requests
 
-# Copy handler and startup script
+# Copy handler and startup script (start.sh must be executable in repo)
 COPY handler.py /app/
-COPY start.sh /app/
-RUN chmod +x /app/start.sh
+COPY --chmod=755 start.sh /app/
 
 ENV CUDA_VISIBLE_DEVICES=0
 ENV PYTHONUNBUFFERED=1

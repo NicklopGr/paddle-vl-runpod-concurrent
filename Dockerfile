@@ -33,7 +33,8 @@ RUN apt-get update && apt-get install -y \
 RUN pip install --upgrade pip setuptools wheel
 
 # Install PaddleOCR with doc-parser (pipeline client for layout detection + post-processing)
-RUN pip install --ignore-installed "paddleocr[doc-parser]==3.3.3"
+# 3.4.0+ required for pipeline_version="v1.5" (PaddleOCR-VL-1.5 support)
+RUN pip install --ignore-installed "paddleocr[doc-parser]>=3.4.0"
 
 # Install vLLM (includes compatible flash-attn as dependency)
 # Do NOT install flash-attn separately - ABI mismatch with vLLM's torch causes

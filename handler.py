@@ -78,12 +78,11 @@ def load_pipeline():
 
     from paddleocr import PaddleOCRVL
 
-    # PP-DocLayoutV3 + PaddleOCR-VL-1.5-0.9B (via vLLM) + UVDoc (pre-loaded for retry)
+    # PP-DocLayoutV3 + PaddleOCR-VL-1.5-0.9B (via genai_server with vLLM backend)
+    # Per: https://www.paddleocr.ai/latest/en/version3.x/pipeline_usage/PaddleOCR-VL.html
     paddle_vl_pipeline = PaddleOCRVL(
-        pipeline_version="v1.5",
         vl_rec_backend="vllm-server",
         vl_rec_server_url="http://localhost:8080/v1",
-        vl_rec_api_model_name="PaddlePaddle/PaddleOCR-VL-1.5",
         use_doc_unwarping=True,  # Pre-load UVDoc model so retry is fast
     )
 

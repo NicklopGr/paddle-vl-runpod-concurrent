@@ -1,63 +1,35 @@
-# PaddleOCR-VL-1.5 RunPod Serverless Container (vLLM Backend)
+# PaddleOCR-VL-1.5 RunPod Serverless Container
 #
 # Architecture:
-#   vllm serve PaddleOCR-VL-1.5 (background, port 8080) - VLM inference with continuous batching
+#   paddleocr genai_server (background, port 8080) - vLLM backend with PaddleOCR-VL-1.5-0.9B
 #   handler.py (RunPod serverless) - uses PaddleOCRVL pipeline client:
-#     1. PP-DocLayoutV3 layout detection (CPU, fast)
+#     1. PP-DocLayoutV3 layout detection
 #     2. Crops → vLLM server at localhost:8080 (batched)
 #     3. UVDoc fallback for collapsed table rows
 #     4. Post-processing → markdown
 #
-# Strategy: PaddlePaddle base for pipeline client, pip install vllm for server
-# Bypasses paddleocr install_genai_server_deps (broken in Docker builds)
-# Uses vllm serve directly per https://docs.vllm.ai/projects/recipes/en/latest/PaddlePaddle/PaddleOCR-VL.html
+# Base image: Official PaddleOCR genai vLLM server
+# - All dependencies pre-installed and compatible
+# - No CUDA version conflicts
+# - Proper paddleocr + vLLM integration
+#
+# Per: https://www.paddleocr.ai/latest/en/version3.x/pipeline_usage/PaddleOCR-VL.html
 
-FROM paddlepaddle/paddle:3.2.2-gpu-cuda12.6-cudnn9.5
+FROM ccr-2vdh3abv-pub.cnc.bj.baidubce.com/paddlepaddle/paddleocr-genai-vllm-server:latest-nvidia-gpu
 
 WORKDIR /app
-
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
-    libgl1-mesa-glx \
-    libglib2.0-0 \
-    libsm6 \
-    libxext6 \
-    libxrender-dev \
-    libgomp1 \
-    poppler-utils \
-    curl \
-    git \
-    && rm -rf /var/lib/apt/lists/*
-
-# Upgrade pip
-RUN pip install --upgrade pip setuptools wheel
-
-# Install PaddleOCR with doc-parser (pipeline client for layout detection + post-processing)
-# 3.4.0+ required for pipeline_version="v1.5" (PaddleOCR-VL-1.5 support)
-RUN pip install --ignore-installed "paddleocr[doc-parser]>=3.4.0"
-
-# Install vLLM (includes compatible flash-attn as dependency)
-# Do NOT install flash-attn separately - ABI mismatch with vLLM's torch causes
-# "undefined symbol: _ZNK3c106SymInt6sym_neERKS0_" at runtime
-RUN pip install vllm
 
 # Install RunPod SDK
 RUN pip install runpod requests
 
-# Pre-download layout model so cold start doesn't fetch it
-RUN python -c "from paddleocr import PaddleOCRVL; print('imports ok')" || true
-
-COPY pipeline_config_vllm.yaml /app/
+# Copy handler and startup script
 COPY handler.py /app/
 COPY start.sh /app/
 RUN chmod +x /app/start.sh
 
 ENV CUDA_VISIBLE_DEVICES=0
-ENV PADDLE_INFERENCE_MEMORY_OPTIM=1
 ENV PYTHONUNBUFFERED=1
 ENV RUNPOD_DEBUG_LEVEL=INFO
-ENV VLLM_DISABLE_MODEL_SOURCE_CHECK=1
 ENV DISABLE_MODEL_SOURCE_CHECK=True
-ENV VLLM_CACHE_ROOT=/runpod-volume/vllm_cache
 
-CMD ["bash", "start.sh"]
+CMD ["bash", "/app/start.sh"]

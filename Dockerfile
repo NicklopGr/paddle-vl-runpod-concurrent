@@ -1,11 +1,12 @@
-# PaddleOCR-VL RunPod Serverless Container (vLLM Backend)
+# PaddleOCR-VL-1.5 RunPod Serverless Container (vLLM Backend)
 #
 # Architecture:
-#   vllm serve PaddleOCR-VL (background, port 8080) - VLM inference with continuous batching
+#   vllm serve PaddleOCR-VL-1.5 (background, port 8080) - VLM inference with continuous batching
 #   handler.py (RunPod serverless) - uses PaddleOCRVL pipeline client:
-#     1. PP-DocLayoutV2 layout detection (CPU, fast)
+#     1. PP-DocLayoutV3 layout detection (CPU, fast)
 #     2. Crops → vLLM server at localhost:8080 (batched)
-#     3. Post-processing → markdown
+#     3. UVDoc fallback for collapsed table rows
+#     4. Post-processing → markdown
 #
 # Strategy: PaddlePaddle base for pipeline client, pip install vllm for server
 # Bypasses paddleocr install_genai_server_deps (broken in Docker builds)

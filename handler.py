@@ -1,31 +1,40 @@
 """
-PaddleOCR-VL RunPod Serverless Handler (vLLM Backend)
+PaddleOCR-VL-1.5 RunPod Serverless Handler (vLLM Backend)
+
+Pipeline:
+1. PP-DocLayoutV3 (Layout Analysis) - Detects 25 element categories with reading order
+2. PaddleOCR-VL-1.5-0.9B via vLLM server (continuous batching, Flash Attention)
+3. Post-processing - Outputs structured markdown with HTML tables
+4. UVDoc (Fallback) - Re-processes pages with collapsed table rows using doc unwarping
 
 Architecture:
-  - paddleocr genai_server runs vLLM with PaddleOCR-VL-0.9B (continuous batching)
+  - vLLM serves PaddleOCR-VL-1.5-0.9B on localhost:8080 (started by start.sh)
   - This handler uses PaddleOCRVL pipeline client which:
-    1. Runs PP-DocLayoutV2 layout detection (CPU)
-    2. Sends cropped regions to vLLM server at localhost:8080
-    3. Assembles markdown output
+    1. Runs PP-DocLayoutV3 layout detection (local, CPU)
+    2. Sends cropped regions to vLLM server (batched VLM inference)
+    3. Detects collapsed table rows → retries with UVDoc unwarping
+    4. Assembles markdown output
 
-Input (URL mode - preferred):
+Input:
 {
     "input": {
-        "image_urls": ["https://...", ...],
+        "image_urls": ["https://...", ...],   // URL mode (preferred)
+        "images_base64": ["base64_1", ...],   // OR base64 mode
+        "image_base64": "base64_single",      // OR single image
         "skip_resize": false,
         "warmup": true
     }
 }
 
-Input (base64 mode - backward compatible):
+Output:
 {
-    "input": {
-        "images_base64": ["base64_1", ...],
-        "image_base64": "base64_single"
+    "status": "success",
+    "result": {
+        "pages": [{ "page_number": 1, "markdown": "...", "parsing_res_list": [...], "json": {...} }],
+        "ocrProvider": "paddleocr-vl-vllm",
+        "processingTime": 1234
     }
 }
-
-Output: { status, result: { pages: [{page_number, markdown, parsing_res_list}], ocrProvider, processingTime } }
 """
 
 import runpod
@@ -34,6 +43,7 @@ import base64
 import tempfile
 import os
 import time
+import re
 import warnings
 import requests
 from concurrent.futures import ThreadPoolExecutor
@@ -42,7 +52,7 @@ import io
 import numpy as np
 
 # ============================================================================
-# PERFORMANCE OPTIMIZATIONS (vLLM backend v2)
+# PERFORMANCE OPTIMIZATIONS - Set before any PaddlePaddle imports
 # ============================================================================
 
 os.environ["PADDLEX_SKIP_MODEL_CHECK"] = "1"
@@ -50,35 +60,35 @@ os.environ.setdefault("DISABLE_MODEL_SOURCE_CHECK", "True")
 warnings.filterwarnings("ignore", message=".*Non compatible API.*")
 warnings.filterwarnings("ignore", category=Warning, module="paddle.utils.decorator_utils")
 
-# Global pipeline - loaded once
+# Global pipeline - loaded once at container startup
 paddle_vl_pipeline = None
-
-# Serialization lock for pipeline.predict()
-_predict_lock: asyncio.Lock | None = None
-SERIALIZE_PREDICT = os.environ.get("PADDLE_VL_SERIALIZE", "true").lower() == "true"
 
 # Thread pool for parallel image downloads
 _download_pool = ThreadPoolExecutor(max_workers=8)
 
 
 def load_pipeline():
-    """Load PaddleOCR-VL pipeline with vLLM backend config"""
+    """Load PaddleOCR-VL-1.5 pipeline with vLLM backend + UVDoc pre-loaded"""
     global paddle_vl_pipeline
     if paddle_vl_pipeline is not None:
         return paddle_vl_pipeline
 
-    print("[PaddleOCR-VL] Loading pipeline with vLLM backend...")
+    print("[PaddleOCR-VL] Loading v1.5 pipeline with vLLM backend...")
     start = time.time()
 
     from paddleocr import PaddleOCRVL
+
+    # PP-DocLayoutV3 + PaddleOCR-VL-1.5-0.9B (via vLLM) + UVDoc (pre-loaded for retry)
     paddle_vl_pipeline = PaddleOCRVL(
+        pipeline_version="v1.5",
         vl_rec_backend="vllm-server",
         vl_rec_server_url="http://localhost:8080/v1",
-        vl_rec_api_model_name="PaddlePaddle/PaddleOCR-VL",
+        vl_rec_api_model_name="PaddlePaddle/PaddleOCR-VL-1.5",
+        use_doc_unwarping=True,  # Pre-load UVDoc model so retry is fast
     )
 
     elapsed = time.time() - start
-    print(f"[PaddleOCR-VL] Pipeline loaded in {elapsed:.2f}s (vLLM backend)")
+    print(f"[PaddleOCR-VL] Pipeline loaded in {elapsed:.2f}s (vLLM v1.5 backend)")
 
     # Run a dummy inference to warm up vLLM (avoids ~35s penalty on first real job)
     try:
@@ -87,7 +97,7 @@ def load_pipeline():
         with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as tmp:
             dummy_img.save(tmp.name, "PNG")
             dummy_path = tmp.name
-        for _ in paddle_vl_pipeline.predict(dummy_path):
+        for _ in paddle_vl_pipeline.predict(dummy_path, use_doc_unwarping=False):
             pass
         os.unlink(dummy_path)
         print(f"[PaddleOCR-VL] Warmup inference done in {time.time() - warmup_start:.2f}s")
@@ -134,96 +144,92 @@ def convert_to_serializable(obj):
 
 def download_image(url: str) -> bytes:
     """Download image from URL and return raw bytes"""
-    print(f"[PaddleOCR-VL] Downloading image from URL ({len(url)} chars)...")
     resp = requests.get(url, timeout=120)
     resp.raise_for_status()
-    print(f"[PaddleOCR-VL] Downloaded {len(resp.content)} bytes")
     return resp.content
 
 
-def process_single_image(pipeline, image_bytes: bytes, page_number: int, skip_resize: bool = False) -> dict:
-    """Process a single image and return markdown + structured output"""
+def prepare_temp_file(image_bytes: bytes, index: int, skip_resize: bool) -> str:
+    """Save image bytes to a temp file, optionally resizing. Returns temp file path."""
     image = Image.open(io.BytesIO(image_bytes))
-
     if image.mode != 'RGB':
         image = image.convert('RGB')
-
-    if skip_resize:
-        print(f"[PaddleOCR-VL] Skipping resize, using original {image.size[0]}x{image.size[1]}")
-    else:
+    if not skip_resize:
         image = resize_image_if_needed(image, max_dimension=1920)
 
-    with tempfile.NamedTemporaryFile(suffix='.png', delete=False) as tmp:
-        image.save(tmp.name, 'PNG')
-        tmp_path = tmp.name
+    tmp = tempfile.NamedTemporaryFile(suffix=f'_page{index}.png', delete=False, dir='/tmp')
+    image.save(tmp.name, 'PNG')
+    tmp.close()
+    return tmp.name
+
+
+def extract_page_result(res, page_number: int) -> dict:
+    """Extract markdown and structured data from a single PaddleOCR-VL result."""
+    markdown_output = ""
+    parsing_res_list = []
+    json_output = None
 
     try:
-        results = pipeline.predict(tmp_path)
+        md_info = res.markdown
+        if md_info:
+            if isinstance(md_info, dict):
+                md_texts = md_info.get('markdown_texts', '')
+                if isinstance(md_texts, str):
+                    markdown_output += md_texts
+                elif isinstance(md_texts, list):
+                    markdown_output += '\n\n'.join(str(t) for t in md_texts)
+            elif isinstance(md_info, str):
+                markdown_output += md_info
+    except Exception as e:
+        print(f"[PaddleOCR-VL] Error accessing markdown (page {page_number}): {e}")
 
-        markdown_output = ""
-        parsing_res_list = []
-        json_output = None
+    try:
+        json_data = res.json
+        if json_data:
+            json_output = convert_to_serializable(json_data)
+            if isinstance(json_data, dict) and 'parsing_res_list' in json_data:
+                parsing_res_list = convert_to_serializable(json_data['parsing_res_list'])
+    except Exception as e:
+        print(f"[PaddleOCR-VL] Error accessing json (page {page_number}): {e}")
 
-        for res in results:
-            try:
-                md_info = res.markdown
-                if md_info:
-                    if isinstance(md_info, dict):
-                        md_texts = md_info.get('markdown_texts', '')
-                        if isinstance(md_texts, str):
-                            markdown_output += md_texts
-                        elif isinstance(md_texts, list):
-                            markdown_output += '\n\n'.join(str(t) for t in md_texts)
-                    elif isinstance(md_info, str):
-                        markdown_output += md_info
-            except Exception as e:
-                print(f"[PaddleOCR-VL] Error accessing markdown: {e}")
+    # Fallback: build markdown from parsing_res_list
+    if not markdown_output and parsing_res_list:
+        for block in parsing_res_list:
+            label = block.get('block_label', '')
+            content = block.get('block_content', '')
+            if content:
+                if label == 'table':
+                    markdown_output += f"\n\n{content}\n\n"
+                else:
+                    markdown_output += f"\n{content}\n"
 
-            try:
-                json_data = res.json
-                if json_data:
-                    json_output = convert_to_serializable(json_data)
-                    if isinstance(json_data, dict) and 'parsing_res_list' in json_data:
-                        parsing_res_list = convert_to_serializable(json_data['parsing_res_list'])
-            except Exception as e:
-                print(f"[PaddleOCR-VL] Error accessing json: {e}")
-
-            if not markdown_output and parsing_res_list:
-                for block in parsing_res_list:
-                    label = block.get('block_label', '')
-                    content = block.get('block_content', '')
-                    if content:
-                        if label == 'table':
-                            markdown_output += f"\n\n{content}\n\n"
-                        else:
-                            markdown_output += f"\n{content}\n"
-
-        return {
-            "page_number": page_number,
-            "markdown": markdown_output.strip(),
-            "parsing_res_list": parsing_res_list,
-            "json": json_output
-        }
-    finally:
-        if os.path.exists(tmp_path):
-            os.unlink(tmp_path)
+    return {
+        "page_number": page_number,
+        "markdown": markdown_output.strip(),
+        "parsing_res_list": parsing_res_list,
+        "json": json_output
+    }
 
 
-async def process_single_image_async(pipeline, image_bytes: bytes, page_number: int, skip_resize: bool = False) -> dict:
-    """Async wrapper with optional serialization lock"""
-    global _predict_lock
+def is_collapsed_page(markdown: str) -> bool:
+    """Detect if a page has collapsed table rows.
 
-    if SERIALIZE_PREDICT:
-        if _predict_lock is None:
-            _predict_lock = asyncio.Lock()
-        async with _predict_lock:
-            return await asyncio.get_event_loop().run_in_executor(
-                None, process_single_image, pipeline, image_bytes, page_number, skip_resize
-            )
-    else:
-        return await asyncio.get_event_loop().run_in_executor(
-            None, process_single_image, pipeline, image_bytes, page_number, skip_resize
-        )
+    Collapsed rows occur when PaddleOCR-VL dumps all transactions into a single
+    <tr>, with multiple amounts/dates crammed into individual <td> cells.
+    Retrying with doc unwarping fixes this.
+    """
+    cells = re.findall(r'<td[^>]*>(.*?)</td>', markdown, re.DOTALL)
+    for cell in cells:
+        text = cell.strip()
+        # Multiple dollar amounts in one cell = collapsed
+        amounts = re.findall(r'[\d,]+\.\d{2}', text)
+        if len(amounts) >= 3:
+            return True
+        # Multiple MMMDD dates in one cell = collapsed (e.g. DEC08 DEC09 DEC10)
+        dates = re.findall(r'[A-Z]{3}\d{2}', text)
+        if len(dates) >= 3:
+            return True
+    return False
 
 
 async def handler(event):
@@ -241,8 +247,8 @@ async def handler(event):
                 "result": {
                     "warmup": True,
                     "backend": "vllm",
-                    "concurrent": True,
-                    "serialize_predict": SERIALIZE_PREDICT
+                    "model": "PaddleOCR-VL-1.5",
+                    "concurrent": True
                 }
             }
 
@@ -251,7 +257,7 @@ async def handler(event):
         # Collect image bytes from URLs or base64
         image_bytes_list: list[bytes] = []
 
-        # Priority 1: image_urls (preferred)
+        # Priority 1: image_urls (preferred - avoids base64 overhead)
         image_urls = job_input.get("image_urls", [])
         if image_urls:
             print(f"[PaddleOCR-VL] Downloading {len(image_urls)} images from URLs (parallel)...")
@@ -279,19 +285,55 @@ async def handler(event):
         if skip_resize:
             print(f"[PaddleOCR-VL] skip_resize=True (client handled sizing)")
 
-        print(f"[PaddleOCR-VL] Processing {len(image_bytes_list)} page(s) (vLLM backend)")
+        print(f"[PaddleOCR-VL] Processing {len(image_bytes_list)} page(s) (vLLM v1.5 backend)")
 
         pipeline = load_pipeline()
 
-        pages = []
-        for i, img_bytes in enumerate(image_bytes_list):
-            page_start = time.time()
-            page_result = await process_single_image_async(
-                pipeline, img_bytes, page_number=i + 1, skip_resize=skip_resize
-            )
-            page_time = time.time() - page_start
-            print(f"[PaddleOCR-VL] Page {i + 1} processed in {page_time:.2f}s")
-            pages.append(page_result)
+        # Save all images to temp files for batch predict
+        temp_paths = []
+        try:
+            for i, img_bytes in enumerate(image_bytes_list):
+                tmp_path = prepare_temp_file(img_bytes, i + 1, skip_resize)
+                temp_paths.append(tmp_path)
+
+            # Pass 1: Batch predict WITHOUT doc unwarping
+            predict_start = time.time()
+            results = list(pipeline.predict(temp_paths, use_doc_unwarping=False))
+            predict_time = time.time() - predict_start
+            print(f"[PaddleOCR-VL] Batch predict completed in {predict_time:.2f}s for {len(temp_paths)} page(s)")
+
+            # Map results to pages and detect collapsed rows
+            pages = []
+            collapsed_indices = []
+            for i, res in enumerate(results):
+                page_result = extract_page_result(res, page_number=i + 1)
+                print(f"[PaddleOCR-VL] Page {i+1} markdown length: {len(page_result['markdown'])}")
+                if is_collapsed_page(page_result['markdown']):
+                    collapsed_indices.append(i)
+                pages.append(page_result)
+
+            # Pass 2: Retry collapsed pages WITH doc unwarping
+            if collapsed_indices:
+                print(f"[PaddleOCR-VL] {len(collapsed_indices)} collapsed page(s) detected: {[i+1 for i in collapsed_indices]}, retrying with doc unwarping")
+                retry_paths = [temp_paths[i] for i in collapsed_indices]
+                retry_start = time.time()
+                retry_results = list(pipeline.predict(retry_paths, use_doc_unwarping=True))
+                retry_time = time.time() - retry_start
+                print(f"[PaddleOCR-VL] Doc unwarping retry completed in {retry_time:.2f}s for {len(retry_paths)} page(s)")
+
+                for j, orig_idx in enumerate(collapsed_indices):
+                    page_result = extract_page_result(retry_results[j], page_number=orig_idx + 1)
+                    print(f"[PaddleOCR-VL] Page {orig_idx+1} retried: markdown length {len(page_result['markdown'])}")
+                    pages[orig_idx] = page_result
+
+        finally:
+            # Cleanup all temp files
+            for tmp_path in temp_paths:
+                try:
+                    if os.path.exists(tmp_path):
+                        os.unlink(tmp_path)
+                except Exception:
+                    pass
 
         processing_time = int((time.time() - start_time) * 1000)
 

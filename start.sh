@@ -16,9 +16,9 @@ else
   echo "[start.sh] No network volume found, using container storage"
 fi
 
-# Start vLLM server directly (serves PaddleOCR-VL via OpenAI-compatible API)
+# Start vLLM server directly (serves PaddleOCR-VL-1.5 via OpenAI-compatible API)
 # Per: https://docs.vllm.ai/projects/recipes/en/latest/PaddlePaddle/PaddleOCR-VL.html
-vllm serve PaddlePaddle/PaddleOCR-VL \
+vllm serve PaddlePaddle/PaddleOCR-VL-1.5 \
   --trust-remote-code \
   --host 0.0.0.0 \
   --port 8080 \

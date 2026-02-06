@@ -233,6 +233,106 @@ def is_collapsed_page(markdown: str) -> bool:
     return False
 
 
+# ============================================================================
+# BATCH PROCESSING WITH RETRY AND FALLBACK
+# ============================================================================
+
+# Max pages per batch - PP-DocLayoutV3's internal cv workers crash with 12+ pages
+MAX_PAGES_PER_BATCH = 10
+
+
+def process_batch(pipeline, batch_paths: list[str], use_orientation: bool = True, use_unwarping: bool = False) -> list:
+    """Process a batch of pages, returns list of results."""
+    return list(pipeline.predict(
+        batch_paths,
+        use_doc_orientation_classify=use_orientation,
+        use_doc_unwarping=use_unwarping
+    ))
+
+
+def process_pages_with_fallback(pipeline, temp_paths: list[str]) -> list:
+    """
+    Process pages with robust fallback strategy:
+    1. Try batch processing (max 10 pages per batch)
+    2. If batch fails, retry once
+    3. If still fails, fallback to page-by-page processing
+
+    Returns list of page results in order.
+    """
+    total_pages = len(temp_paths)
+    all_results = [None] * total_pages  # Pre-allocate to maintain order
+
+    # Split into batches of MAX_PAGES_PER_BATCH
+    batches = []
+    for i in range(0, total_pages, MAX_PAGES_PER_BATCH):
+        batch_end = min(i + MAX_PAGES_PER_BATCH, total_pages)
+        batches.append((i, batch_end, temp_paths[i:batch_end]))
+
+    if len(batches) > 1:
+        print(f"[PaddleOCR-VL] Split {total_pages} pages into {len(batches)} batches (max {MAX_PAGES_PER_BATCH}/batch)")
+
+    for batch_idx, (start_idx, end_idx, batch_paths) in enumerate(batches):
+        batch_size = len(batch_paths)
+        batch_label = f"batch {batch_idx + 1}/{len(batches)}" if len(batches) > 1 else "batch"
+
+        # Try batch processing with retry
+        batch_success = False
+        for attempt in range(1, 3):  # Up to 2 attempts
+            try:
+                predict_start = time.time()
+                print(f"[PaddleOCR-VL] Processing {batch_label}: {batch_size} page(s) (attempt {attempt})")
+
+                results = process_batch(pipeline, batch_paths, use_orientation=True, use_unwarping=False)
+
+                predict_time = time.time() - predict_start
+                print(f"[PaddleOCR-VL] {batch_label.capitalize()} completed in {predict_time:.2f}s")
+
+                # Store results in correct positions
+                for i, res in enumerate(results):
+                    all_results[start_idx + i] = res
+
+                batch_success = True
+                break  # Success, exit retry loop
+
+            except Exception as e:
+                print(f"[PaddleOCR-VL] {batch_label.capitalize()} attempt {attempt} failed: {e}")
+                if attempt < 2:
+                    print(f"[PaddleOCR-VL] Retrying {batch_label}...")
+                    time.sleep(1)
+
+        # If batch still failed, fallback to page-by-page
+        if not batch_success:
+            print(f"[PaddleOCR-VL] {batch_label.capitalize()} failed after 2 attempts, falling back to page-by-page")
+
+            for i, page_path in enumerate(batch_paths):
+                page_num = start_idx + i + 1
+                page_success = False
+
+                for page_attempt in range(1, 3):  # Up to 2 attempts per page
+                    try:
+                        print(f"[PaddleOCR-VL] Processing page {page_num}/{total_pages} individually (attempt {page_attempt})")
+                        page_start = time.time()
+
+                        page_results = process_batch(pipeline, [page_path], use_orientation=True, use_unwarping=False)
+
+                        if page_results:
+                            all_results[start_idx + i] = page_results[0]
+                            print(f"[PaddleOCR-VL] Page {page_num} completed in {time.time() - page_start:.2f}s")
+                            page_success = True
+                            break
+
+                    except Exception as e:
+                        print(f"[PaddleOCR-VL] Page {page_num} attempt {page_attempt} failed: {e}")
+                        if page_attempt < 2:
+                            time.sleep(1)
+
+                if not page_success:
+                    print(f"[PaddleOCR-VL] Page {page_num} failed completely, returning empty result")
+                    # Leave as None - will be handled as empty page
+
+    return all_results
+
+
 async def handler(event):
     """RunPod serverless handler (async, concurrent-capable)"""
     start_time = time.time()
@@ -298,24 +398,31 @@ async def handler(event):
                 temp_paths.append(tmp_path)
 
             # Pass 1: Batch predict with orientation auto-detection, WITHOUT doc unwarping
+            # Uses batching (max 10 pages) with retry and page-by-page fallback
             # PP-LCNet detects 0°/90°/180°/270° rotation and auto-corrects
             predict_start = time.time()
-            results = list(pipeline.predict(
-                temp_paths,
-                use_doc_orientation_classify=True,
-                use_doc_unwarping=False
-            ))
+            results = process_pages_with_fallback(pipeline, temp_paths)
             predict_time = time.time() - predict_start
-            print(f"[PaddleOCR-VL] Batch predict completed in {predict_time:.2f}s for {len(temp_paths)} page(s)")
+            print(f"[PaddleOCR-VL] All pages processed in {predict_time:.2f}s")
 
             # Map results to pages and detect collapsed rows
             pages = []
             collapsed_indices = []
             for i, res in enumerate(results):
-                page_result = extract_page_result(res, page_number=i + 1)
-                print(f"[PaddleOCR-VL] Page {i+1} markdown length: {len(page_result['markdown'])}")
-                if is_collapsed_page(page_result['markdown']):
-                    collapsed_indices.append(i)
+                if res is None:
+                    # Page failed completely - create empty result
+                    page_result = {
+                        "page_number": i + 1,
+                        "markdown": "",
+                        "parsing_res_list": [],
+                        "json": None
+                    }
+                    print(f"[PaddleOCR-VL] Page {i+1} FAILED - empty result")
+                else:
+                    page_result = extract_page_result(res, page_number=i + 1)
+                    print(f"[PaddleOCR-VL] Page {i+1} markdown length: {len(page_result['markdown'])}")
+                    if is_collapsed_page(page_result['markdown']):
+                        collapsed_indices.append(i)
                 pages.append(page_result)
 
             # Pass 2: Retry collapsed pages WITH doc unwarping

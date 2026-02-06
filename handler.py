@@ -312,18 +312,37 @@ async def handler(event):
                 pages.append(page_result)
 
             # Pass 2: Retry collapsed pages WITH doc unwarping
+            # UVDoc can crash with "cv worker: std::exception" on certain images
+            # See: https://github.com/PaddlePaddle/PaddleOCR/issues/17206
+            # Strategy: Try up to 2 times, fall back to original if both fail
             if collapsed_indices:
                 print(f"[PaddleOCR-VL] {len(collapsed_indices)} collapsed page(s) detected: {[i+1 for i in collapsed_indices]}, retrying with doc unwarping")
                 retry_paths = [temp_paths[i] for i in collapsed_indices]
-                retry_start = time.time()
-                retry_results = list(pipeline.predict(retry_paths, use_doc_unwarping=True))
-                retry_time = time.time() - retry_start
-                print(f"[PaddleOCR-VL] Doc unwarping retry completed in {retry_time:.2f}s for {len(retry_paths)} page(s)")
 
-                for j, orig_idx in enumerate(collapsed_indices):
-                    page_result = extract_page_result(retry_results[j], page_number=orig_idx + 1)
-                    print(f"[PaddleOCR-VL] Page {orig_idx+1} retried: markdown length {len(page_result['markdown'])}")
-                    pages[orig_idx] = page_result
+                retry_success = False
+                for attempt in range(1, 3):  # Try up to 2 times
+                    try:
+                        retry_start = time.time()
+                        retry_results = list(pipeline.predict(retry_paths, use_doc_unwarping=True))
+                        retry_time = time.time() - retry_start
+                        print(f"[PaddleOCR-VL] Doc unwarping retry completed in {retry_time:.2f}s for {len(retry_paths)} page(s) (attempt {attempt})")
+
+                        for j, orig_idx in enumerate(collapsed_indices):
+                            page_result = extract_page_result(retry_results[j], page_number=orig_idx + 1)
+                            print(f"[PaddleOCR-VL] Page {orig_idx+1} retried: markdown length {len(page_result['markdown'])}")
+                            pages[orig_idx] = page_result
+
+                        retry_success = True
+                        break  # Success, exit retry loop
+
+                    except Exception as e:
+                        print(f"[PaddleOCR-VL] Doc unwarping attempt {attempt} failed: {e}")
+                        if attempt < 2:
+                            print(f"[PaddleOCR-VL] Retrying doc unwarping...")
+                            time.sleep(1)  # Brief pause before retry
+
+                if not retry_success:
+                    print(f"[PaddleOCR-VL] Doc unwarping failed after 2 attempts, keeping original results for collapsed pages")
 
         finally:
             # Cleanup all temp files

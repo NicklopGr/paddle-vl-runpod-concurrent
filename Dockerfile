@@ -19,6 +19,10 @@ FROM ccr-2vdh3abv-pub.cnc.bj.baidubce.com/paddlepaddle/paddleocr-genai-vllm-serv
 
 WORKDIR /app
 
+# Install paddlepaddle-cpu for PaddleOCRVL client (device detection)
+# CPU version avoids CUDA conflicts with vLLM - actual inference uses vLLM server
+RUN pip install paddlepaddle-cpu
+
 # Install RunPod SDK
 RUN pip install runpod requests
 

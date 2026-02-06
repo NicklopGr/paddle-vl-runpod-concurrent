@@ -2,10 +2,11 @@
 PaddleOCR-VL-1.5 RunPod Serverless Handler (vLLM Backend)
 
 Pipeline:
-1. PP-DocLayoutV3 (Layout Analysis) - Detects 25 element categories with reading order
-2. PaddleOCR-VL-1.5-0.9B via vLLM server (continuous batching, Flash Attention)
-3. Post-processing - Outputs structured markdown with HTML tables
-4. UVDoc (Fallback) - Re-processes pages with collapsed table rows using doc unwarping
+1. PP-LCNet (Orientation) - Auto-detects and corrects 0°/90°/180°/270° rotation
+2. PP-DocLayoutV3 (Layout Analysis) - Detects 25 element categories with reading order
+3. PaddleOCR-VL-1.5-0.9B via vLLM server (continuous batching, Flash Attention)
+4. Post-processing - Outputs structured markdown with HTML tables
+5. UVDoc (Fallback) - Re-processes pages with collapsed table rows using doc unwarping
 
 Architecture:
   - vLLM serves PaddleOCR-VL-1.5-0.9B on localhost:8080 (started by start.sh)
@@ -83,6 +84,7 @@ def load_pipeline():
     paddle_vl_pipeline = PaddleOCRVL(
         vl_rec_backend="vllm-server",
         vl_rec_server_url="http://localhost:8080/v1",
+        use_doc_orientation_classify=True,  # Pre-load PP-LCNet orientation model
         use_doc_unwarping=True,  # Pre-load UVDoc model so retry is fast
     )
 
@@ -295,9 +297,14 @@ async def handler(event):
                 tmp_path = prepare_temp_file(img_bytes, i + 1, skip_resize)
                 temp_paths.append(tmp_path)
 
-            # Pass 1: Batch predict WITHOUT doc unwarping
+            # Pass 1: Batch predict with orientation auto-detection, WITHOUT doc unwarping
+            # PP-LCNet detects 0°/90°/180°/270° rotation and auto-corrects
             predict_start = time.time()
-            results = list(pipeline.predict(temp_paths, use_doc_unwarping=False))
+            results = list(pipeline.predict(
+                temp_paths,
+                use_doc_orientation_classify=True,
+                use_doc_unwarping=False
+            ))
             predict_time = time.time() - predict_start
             print(f"[PaddleOCR-VL] Batch predict completed in {predict_time:.2f}s for {len(temp_paths)} page(s)")
 

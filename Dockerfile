@@ -39,14 +39,9 @@ RUN pip install --upgrade pip setuptools wheel
 # Install PaddleOCR with doc-parser support
 RUN pip install "paddleocr[doc-parser]"
 
-# Create CUDA stub symlink for Docker build (no GPU driver during build)
-# Per: https://github.com/NVIDIA/nvidia-docker/issues/508
-RUN ln -s /usr/local/cuda/lib64/stubs/libcuda.so /usr/local/cuda/lib64/stubs/libcuda.so.1
-
 # Install vLLM dependencies via official PaddleOCR method
-# LD_LIBRARY_PATH includes CUDA stubs so paddle can import during build
-RUN LD_LIBRARY_PATH=/usr/local/cuda/lib64/stubs:$LD_LIBRARY_PATH \
-    paddleocr install_genai_server_deps vllm
+# CUDA_VISIBLE_DEVICES="" forces CPU mode during install (avoids GPU memory issues)
+RUN CUDA_VISIBLE_DEVICES="" paddleocr install_genai_server_deps vllm
 
 # Install RunPod SDK
 RUN pip install runpod requests

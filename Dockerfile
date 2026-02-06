@@ -31,8 +31,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Install PaddleOCR with doc-parser support (vLLM already in base image)
-RUN pip install --no-cache-dir "paddleocr[doc-parser]>=3.4.0"
+# Install PaddlePaddle CPU (layout detection uses CPU, VLM uses vLLM server on GPU)
+# CPU version avoids CUDA library conflicts with vLLM
+RUN pip install --no-cache-dir paddlepaddle==3.0.0
+
+# Install PaddleOCR with doc-parser support
+RUN pip install --no-cache-dir "paddleocr[doc-parser]>=3.4.0" "paddlex>=3.4.0"
 
 # Install RunPod SDK
 RUN pip install --no-cache-dir runpod requests

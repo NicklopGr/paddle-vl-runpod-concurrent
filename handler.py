@@ -275,34 +275,32 @@ def process_pages_with_fallback(pipeline, temp_paths: list[str]) -> list:
         batch_size = len(batch_paths)
         batch_label = f"batch {batch_idx + 1}/{len(batches)}" if len(batches) > 1 else "batch"
 
-        # Try batch processing with retry
+        # Try batch processing (no retry for cv worker errors - go straight to page-by-page)
         batch_success = False
-        for attempt in range(1, 3):  # Up to 2 attempts
-            try:
-                predict_start = time.time()
-                print(f"[PaddleOCR-VL] Processing {batch_label}: {batch_size} page(s) (attempt {attempt})")
+        try:
+            predict_start = time.time()
+            print(f"[PaddleOCR-VL] Processing {batch_label}: {batch_size} page(s)")
 
-                results = process_batch(pipeline, batch_paths, use_orientation=True, use_unwarping=False)
+            results = process_batch(pipeline, batch_paths, use_orientation=True, use_unwarping=False)
 
-                predict_time = time.time() - predict_start
-                print(f"[PaddleOCR-VL] {batch_label.capitalize()} completed in {predict_time:.2f}s")
+            predict_time = time.time() - predict_start
+            print(f"[PaddleOCR-VL] {batch_label.capitalize()} completed in {predict_time:.2f}s")
 
-                # Store results in correct positions
-                for i, res in enumerate(results):
-                    all_results[start_idx + i] = res
+            # Store results in correct positions
+            for i, res in enumerate(results):
+                all_results[start_idx + i] = res
 
-                batch_success = True
-                break  # Success, exit retry loop
+            batch_success = True
 
-            except Exception as e:
-                print(f"[PaddleOCR-VL] {batch_label.capitalize()} attempt {attempt} failed: {e}")
-                if attempt < 2:
-                    print(f"[PaddleOCR-VL] Retrying {batch_label}...")
-                    time.sleep(1)
+        except Exception as e:
+            error_msg = str(e)
+            print(f"[PaddleOCR-VL] {batch_label.capitalize()} failed: {error_msg}")
+            # cv worker errors are deterministic - retrying same batch won't help
+            # Go straight to page-by-page to isolate the problematic image
 
-        # If batch still failed, fallback to page-by-page
+        # If batch failed, fallback to page-by-page to isolate problematic image
         if not batch_success:
-            print(f"[PaddleOCR-VL] {batch_label.capitalize()} failed after 2 attempts, falling back to page-by-page")
+            print(f"[PaddleOCR-VL] {batch_label.capitalize()} failed, processing pages individually")
 
             for i, page_path in enumerate(batch_paths):
                 page_num = start_idx + i + 1

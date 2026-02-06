@@ -8,20 +8,19 @@
 #     3. UVDoc fallback for collapsed table rows
 #     4. Post-processing → markdown
 #
-# Installation per official docs:
-# https://www.paddleocr.ai/latest/en/version3.x/pipeline_usage/PaddleOCR-VL.html
+# Uses official pre-built base image that has vLLM with compatible CUDA libraries.
+# Per: https://github.com/PaddlePaddle/PaddleOCR/tree/main/deploy/paddleocr_vl_docker
 #
-# 1. Install PaddlePaddle GPU
-# 2. Install paddleocr[doc-parser]
-# 3. Use paddleocr install_genai_server_deps vllm (proper vLLM integration)
-# 4. Start with paddleocr genai_server
+# This avoids the nvidia-cublas version conflict between paddlepaddle-gpu and vllm.
 
-FROM paddlepaddle/paddle:3.2.2-gpu-cuda12.6-cudnn9.5
+FROM ccr-2vdh3abv-pub.cnc.bj.baidubce.com/paddlepaddle/paddlex-genai-vllm-server:latest
+
+USER root
 
 WORKDIR /app
 
-# Install system dependencies
-RUN apt-get update && apt-get install -y \
+# Install system dependencies for OpenCV and PDF processing
+RUN apt-get update && apt-get install -y --no-install-recommends \
     libgl1-mesa-glx \
     libglib2.0-0 \
     libsm6 \
@@ -30,24 +29,16 @@ RUN apt-get update && apt-get install -y \
     libgomp1 \
     poppler-utils \
     curl \
-    git \
     && rm -rf /var/lib/apt/lists/*
 
-# Upgrade pip
-RUN pip install --upgrade pip setuptools wheel
-
-# Install PaddleOCR with doc-parser support
-RUN pip install "paddleocr[doc-parser]"
-
-# Install vLLM dependencies via official PaddleOCR method
-# CUDA_VISIBLE_DEVICES="" forces CPU mode during install (avoids GPU memory issues)
-RUN CUDA_VISIBLE_DEVICES="" paddleocr install_genai_server_deps vllm
+# Install PaddleOCR with doc-parser support (vLLM already in base image)
+RUN pip install --no-cache-dir "paddleocr[doc-parser]>=3.4.0"
 
 # Install RunPod SDK
-RUN pip install runpod requests
+RUN pip install --no-cache-dir runpod requests
 
-# Pre-download layout model
-RUN python -c "from paddleocr import PaddleOCRVL; print('imports ok')" || true
+# Pre-download layout model (PP-DocLayoutV3)
+RUN python -c "from paddleocr import PaddleOCRVL; print('PaddleOCR-VL imports ok')" || true
 
 COPY handler.py /app/
 COPY --chmod=755 start.sh /app/

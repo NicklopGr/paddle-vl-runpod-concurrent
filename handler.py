@@ -86,6 +86,8 @@ def load_pipeline():
         vl_rec_server_url="http://localhost:8080/v1",
         use_doc_orientation_classify=True,  # Pre-load PP-LCNet orientation model
         use_doc_unwarping=True,  # Pre-load UVDoc model so retry is fast
+        use_queues=True,  # Enable queue-based concurrent execution (thread-safe)
+        vl_rec_max_concurrency=8,  # Limit concurrent VLM requests
     )
 
     elapsed = time.time() - start

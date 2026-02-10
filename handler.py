@@ -81,6 +81,8 @@ def load_pipeline():
 
     # PP-DocLayoutV3 + PaddleOCR-VL-1.5-0.9B (via genai_server with vLLM backend)
     # Per: https://www.paddleocr.ai/latest/en/version3.x/pipeline_usage/PaddleOCR-VL.html
+    # device="cpu" forces PP-DocLayoutV3 to run on CPU, avoiding CUDA kernel crashes
+    # (PaddlePaddle's pre-compiled CUDA binaries lack kernels for Ampere compute 8.6)
     paddle_vl_pipeline = PaddleOCRVL(
         vl_rec_backend="vllm-server",
         vl_rec_server_url="http://localhost:8080/v1",
@@ -88,6 +90,7 @@ def load_pipeline():
         use_doc_unwarping=True,  # Pre-load UVDoc model so retry is fast
         use_queues=True,  # Enable queue-based concurrent execution (thread-safe)
         vl_rec_max_concurrency=8,  # Limit concurrent VLM requests
+        device="cpu",  # Force CPU for layout detection (avoids cv worker crashes)
     )
 
     elapsed = time.time() - start

@@ -18,14 +18,14 @@ fi
 
 # Start PaddleOCR genai server with vLLM backend (official method)
 # Per: https://www.paddleocr.ai/latest/en/version3.x/pipeline_usage/PaddleOCR-VL.html
-# --gpu-memory-utilization 0.85 allows using ~85% VRAM (default 0.5 wastes half the GPU)
-echo "[start.sh] Starting PaddleOCR genai_server with vLLM backend..."
+# GPU_MEMORY_UTILIZATION env var controls vLLM VRAM usage (default 0.5 wastes half the GPU)
+export GPU_MEMORY_UTILIZATION=0.85
+echo "[start.sh] Starting PaddleOCR genai_server with vLLM backend (GPU_MEMORY_UTILIZATION=$GPU_MEMORY_UTILIZATION)..."
 paddleocr genai_server \
   --model_name PaddleOCR-VL-1.5-0.9B \
   --host 0.0.0.0 \
   --port 8080 \
-  --backend vllm \
-  --gpu-memory-utilization 0.85 &
+  --backend vllm &
 VLM_PID=$!
 
 # Wait for server to be healthy

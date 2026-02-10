@@ -64,8 +64,8 @@ warnings.filterwarnings("ignore", category=Warning, module="paddle.utils.decorat
 # Global pipeline - loaded once at container startup
 paddle_vl_pipeline = None
 
-# Thread pool for parallel image downloads
-_download_pool = ThreadPoolExecutor(max_workers=8)
+# Thread pool for parallel image downloads (match MAX_PAGES_PER_BATCH)
+_download_pool = ThreadPoolExecutor(max_workers=20)
 
 
 def load_pipeline():

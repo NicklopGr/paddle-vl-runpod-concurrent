@@ -242,8 +242,9 @@ def is_collapsed_page(markdown: str) -> bool:
 # BATCH PROCESSING WITH RETRY AND FALLBACK
 # ============================================================================
 
-# Max pages per batch - PP-DocLayoutV3's internal cv workers crash with 12+ pages
-MAX_PAGES_PER_BATCH = 10
+# Max pages per batch - with device="cpu" for layout detection, cv worker crashes are fixed
+# Increased from 10 to 20 for better throughput
+MAX_PAGES_PER_BATCH = 20
 
 
 def process_batch(pipeline, batch_paths: list[str], use_orientation: bool = True, use_unwarping: bool = False) -> list:
@@ -303,35 +304,25 @@ def process_pages_with_fallback(pipeline, temp_paths: list[str]) -> list:
             # cv worker errors are deterministic - retrying same batch won't help
             # Go straight to page-by-page to isolate the problematic image
 
-        # If batch failed, fallback to page-by-page to isolate problematic image
+        # If batch failed, retry the whole batch once (cv worker crashes are fixed with device="cpu")
         if not batch_success:
-            print(f"[PaddleOCR-VL] {batch_label.capitalize()} failed, processing pages individually")
+            print(f"[PaddleOCR-VL] {batch_label.capitalize()} failed, retrying entire batch")
 
-            for i, page_path in enumerate(batch_paths):
-                page_num = start_idx + i + 1
-                page_success = False
+            try:
+                time.sleep(1)  # Brief pause before retry
+                retry_start = time.time()
+                results = process_batch(pipeline, batch_paths, use_orientation=True, use_unwarping=False)
 
-                for page_attempt in range(1, 3):  # Up to 2 attempts per page
-                    try:
-                        print(f"[PaddleOCR-VL] Processing page {page_num}/{total_pages} individually (attempt {page_attempt})")
-                        page_start = time.time()
+                retry_time = time.time() - retry_start
+                print(f"[PaddleOCR-VL] {batch_label.capitalize()} retry completed in {retry_time:.2f}s")
 
-                        page_results = process_batch(pipeline, [page_path], use_orientation=True, use_unwarping=False)
+                for i, res in enumerate(results):
+                    all_results[start_idx + i] = res
+                batch_success = True
 
-                        if page_results:
-                            all_results[start_idx + i] = page_results[0]
-                            print(f"[PaddleOCR-VL] Page {page_num} completed in {time.time() - page_start:.2f}s")
-                            page_success = True
-                            break
-
-                    except Exception as e:
-                        print(f"[PaddleOCR-VL] Page {page_num} attempt {page_attempt} failed: {e}")
-                        if page_attempt < 2:
-                            time.sleep(1)
-
-                if not page_success:
-                    print(f"[PaddleOCR-VL] Page {page_num} failed completely, returning empty result")
-                    # Leave as None - will be handled as empty page
+            except Exception as e:
+                print(f"[PaddleOCR-VL] {batch_label.capitalize()} retry also failed: {e}")
+                # Leave results as None - will be handled as empty pages
 
     return all_results
 

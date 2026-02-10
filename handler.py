@@ -89,7 +89,7 @@ def load_pipeline():
         use_doc_orientation_classify=True,  # Pre-load PP-LCNet orientation model
         use_doc_unwarping=True,  # Pre-load UVDoc model so retry is fast
         use_queues=True,  # Enable queue-based concurrent execution (thread-safe)
-        vl_rec_max_concurrency=8,  # Limit concurrent VLM requests
+        vl_rec_max_concurrency=20,  # Match MAX_PAGES_PER_BATCH for true 20-page concurrency
         device="cpu",  # Force CPU for layout detection (avoids cv worker crashes)
     )
 

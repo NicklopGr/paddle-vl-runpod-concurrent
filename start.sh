@@ -18,15 +18,19 @@ else
   echo "[start.sh] No network volume found, using container storage"
 fi
 
+# Create vLLM backend config file (--backend_config expects YAML file, not string)
+cat > /tmp/vllm_config.yaml << 'EOF'
+gpu-memory-utilization: 0.85
+EOF
+
 # Start PaddleOCR genai server with vLLM backend
-# gpu-memory-utilization MUST be passed via --backend_config (env var is ignored by vLLM)
 echo "[start.sh] Starting PaddleOCR genai_server with vLLM backend (gpu-memory-utilization=0.85)..."
 paddleocr genai_server \
   --model_name PaddleOCR-VL-1.5-0.9B \
   --host 0.0.0.0 \
   --port 8080 \
   --backend vllm \
-  --backend_config "gpu-memory-utilization=0.85" &
+  --backend_config /tmp/vllm_config.yaml &
 VLM_PID=$!
 
 # Wait for server to be healthy

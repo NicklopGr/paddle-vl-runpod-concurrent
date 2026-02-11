@@ -6,26 +6,27 @@ export DISABLE_MODEL_SOURCE_CHECK=True
 # Use network volume for model cache (faster cold starts)
 VOLUME_PATH="${RUNPOD_VOLUME_PATH:-/runpod-volume}"
 if [ -d "$VOLUME_PATH" ]; then
+  # PADDLEX_HOME is the correct env var for PaddleX model caching
+  # (PADDLE_HOME and PADDLEOCR_HOME are ignored by PaddleX)
+  export PADDLEX_HOME="$VOLUME_PATH/paddlex_models"
   export HF_HOME="$VOLUME_PATH/huggingface"
   export HF_HUB_CACHE="$VOLUME_PATH/huggingface/hub"
-  export PADDLE_HOME="$VOLUME_PATH/paddle_models"
-  export PADDLEOCR_HOME="$VOLUME_PATH/paddle_models"
-  mkdir -p "$HF_HOME" "$HF_HUB_CACHE" "$PADDLE_HOME"
+  mkdir -p "$PADDLEX_HOME" "$HF_HOME" "$HF_HUB_CACHE"
   echo "[start.sh] Using network volume cache: $VOLUME_PATH"
+  echo "[start.sh] PADDLEX_HOME=$PADDLEX_HOME"
 else
   echo "[start.sh] No network volume found, using container storage"
 fi
 
-# Start PaddleOCR genai server with vLLM backend (official method)
-# Per: https://www.paddleocr.ai/latest/en/version3.x/pipeline_usage/PaddleOCR-VL.html
-# GPU_MEMORY_UTILIZATION env var controls vLLM VRAM usage (default 0.5 wastes half the GPU)
-export GPU_MEMORY_UTILIZATION=0.85
-echo "[start.sh] Starting PaddleOCR genai_server with vLLM backend (GPU_MEMORY_UTILIZATION=$GPU_MEMORY_UTILIZATION)..."
+# Start PaddleOCR genai server with vLLM backend
+# gpu-memory-utilization MUST be passed via --backend_config (env var is ignored by vLLM)
+echo "[start.sh] Starting PaddleOCR genai_server with vLLM backend (gpu-memory-utilization=0.85)..."
 paddleocr genai_server \
   --model_name PaddleOCR-VL-1.5-0.9B \
   --host 0.0.0.0 \
   --port 8080 \
-  --backend vllm &
+  --backend vllm \
+  --backend_config "gpu-memory-utilization=0.85" &
 VLM_PID=$!
 
 # Wait for server to be healthy

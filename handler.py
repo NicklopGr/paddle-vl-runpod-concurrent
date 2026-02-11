@@ -64,8 +64,8 @@ warnings.filterwarnings("ignore", category=Warning, module="paddle.utils.decorat
 # Global pipeline - loaded once at container startup
 paddle_vl_pipeline = None
 
-# Thread pool for parallel image downloads (match MAX_PAGES_PER_BATCH)
-_download_pool = ThreadPoolExecutor(max_workers=10)
+# Thread pool for parallel image downloads (match concurrency_modifier for job-level parallelism)
+_download_pool = ThreadPoolExecutor(max_workers=20)
 
 
 def load_pipeline():
@@ -89,7 +89,7 @@ def load_pipeline():
         use_doc_orientation_classify=True,  # Pre-load PP-LCNet orientation model
         use_doc_unwarping=True,  # Pre-load UVDoc model so retry is fast
         use_queues=True,  # Enable queue-based concurrent execution (thread-safe)
-        vl_rec_max_concurrency=10,  # Match MAX_PAGES_PER_BATCH (reduced from 20 to test cv worker stability)
+        vl_rec_max_concurrency=16,  # VLM concurrency to vLLM (independent of cv worker batch size)
         device="cpu",  # Force CPU for layout detection (avoids cv worker crashes)
     )
 
@@ -242,9 +242,10 @@ def is_collapsed_page(markdown: str) -> bool:
 # BATCH PROCESSING WITH RETRY AND FALLBACK
 # ============================================================================
 
-# Max pages per batch - reduced from 20 to 10 to investigate cv worker crashes
-# cv worker crashes may be caused by memory pressure at higher concurrency
-MAX_PAGES_PER_BATCH = 10
+# Max pages per batch for cv worker (layout detection)
+# Reduced from 20 to 9 - cv worker crashes at higher batch sizes
+# Note: VLM concurrency (vl_rec_max_concurrency) is separate and can be higher
+MAX_PAGES_PER_BATCH = 9
 
 
 def process_batch(pipeline, batch_paths: list[str], use_orientation: bool = True, use_unwarping: bool = False) -> list:
@@ -486,10 +487,11 @@ async def handler(event):
 
 def concurrency_modifier(current_concurrency: int) -> int:
     """
-    Allow up to 10 concurrent jobs.
-    Reduced from 20 to investigate cv worker stability issues.
+    Allow up to 20 concurrent jobs.
+    vLLM handles batching internally, so concurrent requests are efficient.
+    Note: MAX_PAGES_PER_BATCH controls cv worker concurrency separately.
     """
-    return 10
+    return 20
 
 
 runpod.serverless.start({

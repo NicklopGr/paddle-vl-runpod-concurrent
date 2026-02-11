@@ -89,7 +89,7 @@ def load_pipeline():
         use_doc_orientation_classify=True,  # Pre-load PP-LCNet orientation model
         use_doc_unwarping=True,  # Pre-load UVDoc model so retry is fast
         use_queues=True,  # Enable queue-based concurrent execution (thread-safe)
-        vl_rec_max_concurrency=16,  # VLM concurrency to vLLM (independent of cv worker batch size)
+        vl_rec_max_concurrency=50,  # VLM concurrency to vLLM (vLLM queues internally if needed)
         device="cpu",  # Force CPU for layout detection (avoids cv worker crashes)
     )
 
@@ -245,7 +245,7 @@ def is_collapsed_page(markdown: str) -> bool:
 # Max pages per batch for cv worker (layout detection)
 # Reduced from 20 to 9 - cv worker crashes at higher batch sizes
 # Note: VLM concurrency (vl_rec_max_concurrency) is separate and can be higher
-MAX_PAGES_PER_BATCH = 9
+MAX_PAGES_PER_BATCH = 10
 
 
 def process_batch(pipeline, batch_paths: list[str], use_orientation: bool = True, use_unwarping: bool = False) -> list:

@@ -65,12 +65,21 @@ warnings.filterwarnings("ignore", category=Warning, module="paddle.utils.decorat
 # Global pipeline - loaded once at container startup
 paddle_vl_pipeline = None
 
+def _env_int(name: str, default: int) -> int:
+    """Read integer env var with fallback."""
+    try:
+        return int(os.environ.get(name, str(default)))
+    except (TypeError, ValueError):
+        return default
+
+
 # Config (baked defaults are set in start.sh/Dockerfile; these allow override)
+WORKER_MAX_CONCURRENCY = max(1, _env_int("PADDLE_VL_WORKER_CONCURRENCY", 1))
 SERIALIZE_PREDICT = os.environ.get("PADDLE_VL_SERIALIZE", "false").lower() == "true"
-MAX_PAGES_PER_BATCH = max(1, int(os.environ.get("PADDLE_VL_MAX_PAGES_PER_BATCH", "9")))
-DOWNLOAD_WORKERS = max(1, int(os.environ.get("PADDLE_VL_DOWNLOAD_WORKERS", "20")))
+MAX_PAGES_PER_BATCH = max(1, _env_int("PADDLE_VL_MAX_PAGES_PER_BATCH", 9))
+DOWNLOAD_WORKERS = max(1, _env_int("PADDLE_VL_DOWNLOAD_WORKERS", 20))
 USE_QUEUES = os.environ.get("PADDLE_VL_USE_QUEUES", "true").lower() == "true"
-VL_REC_MAX_CONCURRENCY = max(1, int(os.environ.get("PADDLE_VL_VL_REC_MAX_CONCURRENCY", "20")))
+VL_REC_MAX_CONCURRENCY = max(1, _env_int("PADDLE_VL_VL_REC_MAX_CONCURRENCY", 20))
 CV_DEVICE = os.environ.get("CV_DEVICE", os.environ.get("PADDLE_VL_DEVICE", "cpu"))
 
 # Thread pool for parallel image downloads (match concurrency_modifier for job-level parallelism)
@@ -88,7 +97,9 @@ def load_pipeline():
 
     print(
         "[PaddleOCR-VL] Loading v1.5 pipeline with vLLM backend "
-        f"(use_queues={USE_QUEUES}, vl_rec_max_concurrency={VL_REC_MAX_CONCURRENCY}, device={CV_DEVICE})..."
+        f"(use_queues={USE_QUEUES}, vl_rec_max_concurrency={VL_REC_MAX_CONCURRENCY}, "
+        f"max_pages_per_batch={MAX_PAGES_PER_BATCH}, worker_concurrency={WORKER_MAX_CONCURRENCY}, "
+        f"device={CV_DEVICE})..."
     )
     start = time.time()
 
@@ -431,6 +442,7 @@ async def handler(event):
                     "serialize_predict": SERIALIZE_PREDICT,
                     "max_pages_per_batch": MAX_PAGES_PER_BATCH,
                     "download_workers": DOWNLOAD_WORKERS,
+                    "worker_max_concurrency": WORKER_MAX_CONCURRENCY,
                     "use_queues": USE_QUEUES,
                     "vl_rec_max_concurrency": VL_REC_MAX_CONCURRENCY,
                     "cv_device": CV_DEVICE,
@@ -596,12 +608,12 @@ async def handler(event):
 
 
 def concurrency_modifier(current_concurrency: int) -> int:
-    """Allow up to 20 concurrent jobs.
+    """Worker-level job concurrency.
 
-    vLLM handles batching internally, so concurrent requests are efficient.
-    Note: MAX_PAGES_PER_BATCH controls cv worker concurrency separately.
+    Keep this low for stability; page/VLM concurrency is controlled separately by
+    MAX_PAGES_PER_BATCH and VL_REC_MAX_CONCURRENCY.
     """
-    return 20
+    return WORKER_MAX_CONCURRENCY
 
 
 runpod.serverless.start(

@@ -29,21 +29,41 @@ echo "[start.sh] CPU thread caps: OMP_NUM_THREADS=${OMP_NUM_THREADS}, MKL_NUM_TH
 # Use network volume for model cache (faster cold starts)
 VOLUME_PATH="${RUNPOD_VOLUME_PATH:-/runpod-volume}"
 if [ -d "$VOLUME_PATH" ]; then
-  # PaddleX uses multiple env vars for model caching:
-  # - PADDLEX_HOME: base directory (often ignored for official models)
-  # - HUB_HOME / PADDLE_HUB_HOME: where "official_models" are actually downloaded
+  # Paddle runtime paths observed in logs are under /root/.paddlex and /root/.cache.
+  # Bind those paths onto the volume so downloads/compile cache persist across restarts.
   export PADDLEX_HOME="$VOLUME_PATH/paddlex_models"
   export HUB_HOME="$VOLUME_PATH/paddlex_models/official_models"
-  export PADDLE_HUB_HOME="$VOLUME_PATH/paddlex_models/official_models"
+  export PADDLE_HUB_HOME="$HUB_HOME"
   export HF_HOME="$VOLUME_PATH/huggingface"
   export HF_HUB_CACHE="$VOLUME_PATH/huggingface/hub"
-  mkdir -p "$PADDLEX_HOME" "$HUB_HOME" "$HF_HOME" "$HF_HUB_CACHE"
+  export XDG_CACHE_HOME="$VOLUME_PATH/xdg_cache"
+  export TORCH_HOME="$VOLUME_PATH/torch_cache"
+  mkdir -p "$PADDLEX_HOME" "$HUB_HOME" "$HF_HOME" "$HF_HUB_CACHE" "$XDG_CACHE_HOME/vllm" "$TORCH_HOME"
+
+  mkdir -p /root/.paddlex /root/.cache
+  rm -rf /root/.paddlex/official_models /root/.cache/huggingface /root/.cache/vllm /root/.cache/torch
+  ln -s "$HUB_HOME" /root/.paddlex/official_models
+  ln -s "$HF_HUB_CACHE" /root/.cache/huggingface
+  ln -s "$XDG_CACHE_HOME/vllm" /root/.cache/vllm
+  ln -s "$TORCH_HOME" /root/.cache/torch
+
   echo "[start.sh] Using network volume cache: $VOLUME_PATH"
   echo "[start.sh] PADDLEX_HOME=$PADDLEX_HOME"
   echo "[start.sh] HUB_HOME=$HUB_HOME"
+  echo "[start.sh] /root/.paddlex/official_models -> $(readlink -f /root/.paddlex/official_models || true)"
+  echo "[start.sh] /root/.cache/vllm -> $(readlink -f /root/.cache/vllm || true)"
 else
   echo "[start.sh] No network volume found, using container storage"
 fi
+
+# Runtime defaults for stable single-worker behavior
+: "${PADDLE_VL_WORKER_CONCURRENCY:=1}"
+: "${PADDLE_VL_MAX_PAGES_PER_BATCH:=9}"
+: "${PADDLE_VL_VL_REC_MAX_CONCURRENCY:=20}"
+: "${PADDLE_VL_USE_QUEUES:=true}"
+: "${PADDLE_VL_DOWNLOAD_WORKERS:=20}"
+export PADDLE_VL_WORKER_CONCURRENCY PADDLE_VL_MAX_PAGES_PER_BATCH PADDLE_VL_VL_REC_MAX_CONCURRENCY PADDLE_VL_USE_QUEUES PADDLE_VL_DOWNLOAD_WORKERS
+echo "[start.sh] Runtime: worker_concurrency=${PADDLE_VL_WORKER_CONCURRENCY}, max_pages_per_batch=${PADDLE_VL_MAX_PAGES_PER_BATCH}, vl_rec_max_concurrency=${PADDLE_VL_VL_REC_MAX_CONCURRENCY}, use_queues=${PADDLE_VL_USE_QUEUES}, download_workers=${PADDLE_VL_DOWNLOAD_WORKERS}"
 
 # Create vLLM backend config file (--backend_config expects YAML file, not string)
 # Note: hf-overrides enables fast image processor (requires torchvision)

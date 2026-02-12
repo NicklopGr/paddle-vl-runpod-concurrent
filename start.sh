@@ -49,8 +49,7 @@ fi
 # Note: hf-overrides enables fast image processor (requires torchvision)
 cat > /tmp/vllm_config.yaml << 'EOF'
 gpu-memory-utilization: 0.5
-hf-overrides:
-  use_fast: true
+hf-overrides: "{\"use_fast\": true}"
 EOF
 
 # Start PaddleOCR genai server with vLLM backend

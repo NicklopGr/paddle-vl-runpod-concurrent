@@ -46,6 +46,7 @@ import tempfile
 import time
 import warnings
 from concurrent.futures import ThreadPoolExecutor
+from functools import partial
 
 import numpy as np
 import requests
@@ -322,22 +323,7 @@ async def process_batch_async(
     global _predict_lock
 
     loop = asyncio.get_running_loop()
-
-    if SERIALIZE_PREDICT:
-        if _predict_lock is None:
-            _predict_lock = asyncio.Lock()
-        async with _predict_lock:
-            return await loop.run_in_executor(
-                None,
-                process_batch,
-                pipeline,
-                batch_paths,
-                use_orientation=use_orientation,
-                use_unwarping=use_unwarping,
-            )
-
-    return await loop.run_in_executor(
-        None,
+    fn = partial(
         process_batch,
         pipeline,
         batch_paths,
@@ -345,6 +331,13 @@ async def process_batch_async(
         use_unwarping=use_unwarping,
     )
 
+    if SERIALIZE_PREDICT:
+        if _predict_lock is None:
+            _predict_lock = asyncio.Lock()
+        async with _predict_lock:
+            return await loop.run_in_executor(None, fn)
+
+    return await loop.run_in_executor(None, fn)
 
 async def process_pages_with_fallback(pipeline, temp_paths: list[str]) -> list:
     """Process pages with robust fallback strategy.

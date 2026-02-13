@@ -3,14 +3,18 @@ set -e
 
 export DISABLE_MODEL_SOURCE_CHECK=True
 
-# Baked-in defaults (RunPod env can override these at deploy time)
+# Baked-in defaults optimized for H100 GPU (RunPod env can override these at deploy time)
+# H100 optimization per Baidu official PaddleOCR-VL-1.5 config:
+# - batch_size: 64 (official pipeline batch size)
+# - CV_DEVICE=gpu (H100 has proper Ampere+ CUDA kernels, no cv worker crashes)
+# - CPU_THREADS=4 (H100 pods have more CPU cores)
 : "${PADDLE_VL_SERIALIZE:=false}"
-: "${CV_DEVICE:=cpu}"
+: "${CV_DEVICE:=gpu}"
 : "${PADDLE_VL_USE_QUEUES:=true}"
-: "${PADDLE_VL_VL_REC_MAX_CONCURRENCY:=20}"
-: "${PADDLE_VL_MAX_PAGES_PER_BATCH:=9}"
+: "${PADDLE_VL_VL_REC_MAX_CONCURRENCY:=64}"
+: "${PADDLE_VL_MAX_PAGES_PER_BATCH:=64}"
 : "${PADDLE_VL_DOWNLOAD_WORKERS:=20}"
-: "${PADDLE_VL_CPU_THREADS:=1}"
+: "${PADDLE_VL_CPU_THREADS:=4}"
 export PADDLE_VL_SERIALIZE CV_DEVICE PADDLE_VL_USE_QUEUES PADDLE_VL_VL_REC_MAX_CONCURRENCY PADDLE_VL_MAX_PAGES_PER_BATCH PADDLE_VL_DOWNLOAD_WORKERS PADDLE_VL_CPU_THREADS
 
 echo "[start.sh] Settings: PADDLE_VL_SERIALIZE=${PADDLE_VL_SERIALIZE}, CV_DEVICE=${CV_DEVICE}, PADDLE_VL_CPU_THREADS=${PADDLE_VL_CPU_THREADS}, PADDLE_VL_MAX_PAGES_PER_BATCH=${PADDLE_VL_MAX_PAGES_PER_BATCH}, PADDLE_VL_USE_QUEUES=${PADDLE_VL_USE_QUEUES}, PADDLE_VL_VL_REC_MAX_CONCURRENCY=${PADDLE_VL_VL_REC_MAX_CONCURRENCY}, PADDLE_VL_DOWNLOAD_WORKERS=${PADDLE_VL_DOWNLOAD_WORKERS}"
@@ -56,24 +60,26 @@ else
   echo "[start.sh] No network volume found, using container storage"
 fi
 
-# Runtime defaults for stable single-worker behavior
+# Runtime defaults for stable single-worker behavior (H100 optimized)
 : "${PADDLE_VL_WORKER_CONCURRENCY:=1}"
-: "${PADDLE_VL_MAX_PAGES_PER_BATCH:=9}"
-: "${PADDLE_VL_VL_REC_MAX_CONCURRENCY:=20}"
+: "${PADDLE_VL_MAX_PAGES_PER_BATCH:=64}"
+: "${PADDLE_VL_VL_REC_MAX_CONCURRENCY:=64}"
 : "${PADDLE_VL_USE_QUEUES:=true}"
 : "${PADDLE_VL_DOWNLOAD_WORKERS:=20}"
 export PADDLE_VL_WORKER_CONCURRENCY PADDLE_VL_MAX_PAGES_PER_BATCH PADDLE_VL_VL_REC_MAX_CONCURRENCY PADDLE_VL_USE_QUEUES PADDLE_VL_DOWNLOAD_WORKERS
 echo "[start.sh] Runtime: worker_concurrency=${PADDLE_VL_WORKER_CONCURRENCY}, max_pages_per_batch=${PADDLE_VL_MAX_PAGES_PER_BATCH}, vl_rec_max_concurrency=${PADDLE_VL_VL_REC_MAX_CONCURRENCY}, use_queues=${PADDLE_VL_USE_QUEUES}, download_workers=${PADDLE_VL_DOWNLOAD_WORKERS}"
 
 # Create vLLM backend config file (--backend_config expects YAML file, not string)
+# H100 optimized: 85% GPU memory utilization, increased batch tokens
 # Note: hf-overrides enables fast image processor (requires torchvision)
 cat > /tmp/vllm_config.yaml << 'EOF'
-gpu-memory-utilization: 0.5
+gpu-memory-utilization: 0.85
+max-num-batched-tokens: 16384
 hf-overrides: "{\"use_fast\": true}"
 EOF
 
 # Start PaddleOCR genai server with vLLM backend
-echo "[start.sh] Starting PaddleOCR genai_server with vLLM backend (gpu-memory-utilization=0.5)..."
+echo "[start.sh] Starting PaddleOCR genai_server with vLLM backend (gpu-memory-utilization=0.85, max-num-batched-tokens=16384)..."
 paddleocr genai_server \
   --model_name PaddleOCR-VL-1.5-0.9B \
   --host 0.0.0.0 \

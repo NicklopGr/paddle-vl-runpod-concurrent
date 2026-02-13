@@ -29,21 +29,38 @@ RUN apt-get update && apt-get install -y --no-install-recommends     libgl1-mesa
 # Install PaddleOCR with doc-parser support
 RUN pip install --no-cache-dir "paddleocr[doc-parser]>=3.4.0" "paddlex>=3.4.0"
 
-# Fix transformers version for vLLM 0.10.2 compatibility (base image requirement)
-# Problem: paddleocr[doc-parser] pulls in transformers >= 5.0.0 which breaks vLLM
-# - vLLM 0.10.2 requires transformers < 5.0.0 (ProcessorMixin import fails otherwise)
-# - PaddleX genai-vllm-server specifies: transformers < 5.0.0
-# - PaddleOCR FAQ #16823 recommends: transformers==4.57.6
-# See: https://github.com/PaddlePaddle/PaddleOCR/issues/16823
-RUN pip install --no-cache-dir "transformers==4.57.6"
+# Fix torch/torchvision/transformers compatibility for vLLM 0.10.2
+#
+# Problem: paddleocr[doc-parser] installs incompatible package versions that break vLLM:
+#   1. torchvision gets upgraded to version incompatible with base image's torch
+#      → RuntimeError: operator torchvision::nms does not exist
+#   2. transformers gets upgraded to 5.0+ which breaks vLLM's ProcessorMixin import
+#      → ModuleNotFoundError: Could not import module 'ProcessorMixin'
+#
+# vLLM 0.10.2 requires (per https://github.com/vllm-project/vllm/releases/tag/v0.10.2):
+#   - torch == 2.8.0
+#   - torchvision == 0.23.x (per PyTorch compatibility matrix: torch 2.8 → torchvision 0.23)
+#   - transformers < 5.0.0 (per PaddleOCR FAQ #16823)
+#
+# References:
+#   - https://github.com/PaddlePaddle/PaddleOCR/issues/16823
+#   - https://github.com/vllm-project/vllm/issues/18776
+#   - https://github.com/pytorch/vision#installation
+RUN pip install --no-cache-dir \
+    "torch==2.8.0+cu124" \
+    "torchvision==0.23.0+cu124" \
+    "transformers>=4.40.0,<5.0.0" \
+    --index-url https://download.pytorch.org/whl/cu124
 
 # Install RunPod SDK
 RUN pip install --no-cache-dir runpod requests
 
 # Install FlashInfer for optimal vLLM sampling (H100 optimized)
-# Using cu124 (CUDA 12.4) for compatibility with base image
-RUN pip install --no-cache-dir flashinfer-python==0.2.2+cu124torch2.5 \
-    --extra-index-url https://flashinfer.ai/whl/cu124/torch2.5/
+# vLLM 0.10.2 uses FlashInfer 0.3.0, but 0.2.x also works
+# Using cu124 + torch2.8 to match the torch version above
+RUN pip install --no-cache-dir flashinfer-python==0.2.14.post1+cu124torch2.8 \
+    --extra-index-url https://flashinfer.ai/whl/cu124/torch2.8/ || \
+    echo "FlashInfer install failed (non-fatal, vLLM will use fallback)"
 
 # Pre-download layout model (PP-DocLayoutV3)
 RUN python -c "from paddleocr import PaddleOCRVL; print('PaddleOCR-VL imports ok')" || true

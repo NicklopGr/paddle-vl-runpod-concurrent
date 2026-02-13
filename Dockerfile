@@ -81,7 +81,9 @@ RUN . /tmp/base_versions.env && \
 #   libraries mounted (libcuda.so.1), which would make `import paddle` fail even though runtime is fine.
 # - We install Paddle into a dedicated venv so its CUDA Python wheels don't clobber the base image's
 #   Torch/vLLM CUDA stack (they can coexist in separate processes).
-RUN python -m venv --system-site-packages /opt/paddle_venv && \
+# - The venv is isolated (no system-site-packages) to avoid pip uninstalling/upgrading the base image
+#   CUDA wheels that vLLM/Torch rely on.
+RUN python -m venv /opt/paddle_venv && \
     /opt/paddle_venv/bin/python -m pip install --no-cache-dir --upgrade pip
 
 RUN . /tmp/base_versions.env && \
@@ -92,9 +94,9 @@ RUN . /tmp/base_versions.env && \
     CUDA_MAJOR=$(echo $CUDA_VERSION | cut -d. -f1,2 | tr -d '.' || true) && \
     if [ "${CUDA_MAJOR}" = "128" ]; then \
         # Paddle does not publish a cu128 index; cu129 is the closest for CUDA 12.8 base images.
-        CANDIDATES="cu129 cu126 cu118"; \
+        CANDIDATES="cu129 cu126"; \
     else \
-        CANDIDATES="cu${CUDA_MAJOR} cu129 cu126 cu118"; \
+        CANDIDATES="cu${CUDA_MAJOR} cu129 cu126"; \
     fi && \
     OK=0 && \
     for CU in ${CANDIDATES}; do \
@@ -110,7 +112,13 @@ RUN . /tmp/base_versions.env && \
         echo "ERROR: Failed to install paddlepaddle-gpu==${PADDLE_VERSION} for CUDA_VERSION=${CUDA_VERSION} (tried: ${CANDIDATES})" >&2; \
         exit 1; \
     fi && \
-    /opt/paddle_venv/bin/python -m pip show paddlepaddle-gpu
+    /opt/paddle_venv/bin/python -m pip show paddlepaddle-gpu && \
+    # Install the handler's runtime deps into the same venv (keeps Paddle isolated from vLLM/Torch).
+    /opt/paddle_venv/bin/python -m pip install --no-cache-dir \
+        "paddleocr[doc-parser]>=3.4.0" \
+        "paddlex>=3.4.0" \
+        "transformers>=4.40.0,<5.0.0" \
+        runpod requests
 
 # Install RunPod SDK
 RUN pip install --no-cache-dir runpod requests

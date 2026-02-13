@@ -103,5 +103,19 @@ for i in $(seq 1 300); do
   sleep 1
 done
 
-# Start RunPod handler (use Paddle venv so installing paddlepaddle-gpu doesn't disturb vLLM/Torch)
+# Start RunPod handler (Paddle runs from /opt/paddle_venv).
+#
+# Paddle's pip wheels ship their own CUDA libs under site-packages/nvidia/*/lib.
+# Ensure the handler prefers those libs so Paddle uses a consistent CUDA stack.
+shopt -s nullglob
+paddle_lib_dirs=(/opt/paddle_venv/lib/python3.10/site-packages/nvidia/*/lib)
+shopt -u nullglob
+if [ "${#paddle_lib_dirs[@]}" -gt 0 ]; then
+  PADDLE_NVIDIA_LD_LIBRARY_PATH="$(IFS=:; echo "${paddle_lib_dirs[*]}")"
+  export LD_LIBRARY_PATH="${PADDLE_NVIDIA_LD_LIBRARY_PATH}:${LD_LIBRARY_PATH}"
+  echo "[start.sh] Prepending Paddle CUDA libs to LD_LIBRARY_PATH (${#paddle_lib_dirs[@]} dirs)"
+else
+  echo "[start.sh] WARNING: no /opt/paddle_venv/.../nvidia/*/lib dirs found; Paddle may fail to load CUDA libs"
+fi
+
 /opt/paddle_venv/bin/python -u /app/handler.py

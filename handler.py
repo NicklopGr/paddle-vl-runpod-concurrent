@@ -81,9 +81,9 @@ MAX_PAGES_PER_BATCH = max(1, _env_int("PADDLE_VL_MAX_PAGES_PER_BATCH", 9))
 DOWNLOAD_WORKERS = max(1, _env_int("PADDLE_VL_DOWNLOAD_WORKERS", 20))
 USE_QUEUES = os.environ.get("PADDLE_VL_USE_QUEUES", "true").lower() == "true"
 VL_REC_MAX_CONCURRENCY = max(1, _env_int("PADDLE_VL_VL_REC_MAX_CONCURRENCY", 20))
-# IMPORTANT: Must be 'cpu' because paddlepaddle is CPU-only (to avoid CUDA conflicts with vLLM)
-# Setting to 'gpu' causes "cv worker: std::exception" crashes due to GPU/CPU state mismatch
-CV_DEVICE = os.environ.get("CV_DEVICE", os.environ.get("PADDLE_VL_DEVICE", "cpu"))
+# CV_DEVICE=gpu uses paddlepaddle-gpu from base image (paddlex-genai-vllm-server)
+# for layout detection (PP-DocLayoutV3). Both VLM and layout run on GPU now.
+CV_DEVICE = os.environ.get("CV_DEVICE", os.environ.get("PADDLE_VL_DEVICE", "gpu"))
 
 # Thread pool for parallel image downloads (match concurrency_modifier for job-level parallelism)
 _download_pool = ThreadPoolExecutor(max_workers=DOWNLOAD_WORKERS)
@@ -468,7 +468,8 @@ async def handler(event):
             }
 
         skip_resize = job_input.get("skip_resize", False)
-        do_preprocess = job_input.get("preprocess", False)
+        # NOTE: Preprocessing (orientation + UVDoc) is now done on the backend server
+        # RunPod receives already-preprocessed images and only runs VLM inference
 
         # Collect image bytes from URLs or base64
         image_bytes_list: list[bytes] = []
@@ -516,33 +517,11 @@ async def handler(event):
                 temp_paths.append(prepare_temp_file(img_bytes, i + 1, skip_resize))
             print(
                 f"[PaddleOCR-VL] Prepared {len(temp_paths)} temp file(s) in {time.time() - prep_start:.2f}s "
-                f"(skip_resize={skip_resize}, preprocess={do_preprocess})"
+                f"(skip_resize={skip_resize})"
             )
 
-            # Optional preprocessing: run DocPreprocessor on all pages before VLM inference
-            # This handles orientation correction and UVDoc unwarping upfront
-            if do_preprocess and doc_preprocessor is not None:
-                print(f"[PaddleOCR-VL] Preprocessing {len(temp_paths)} pages with DocPreprocessor...")
-                preprocess_start = time.time()
-                preprocessed_paths = []
-                original_temp_paths = temp_paths.copy()  # Save for cleanup
-
-                for i, path in enumerate(temp_paths):
-                    output_path = path.replace('.png', '_pp.png').replace('.jpg', '_pp.png').replace('.img', '_pp.png')
-                    try:
-                        result = doc_preprocessor.predict(path)
-                        for res in result:
-                            res.save_to_img(output_path)
-                        preprocessed_paths.append(output_path)
-                        print(f"[PaddleOCR-VL] Preprocessed page {i + 1}")
-                    except Exception as e:
-                        print(f"[PaddleOCR-VL] Preprocessing failed for page {i + 1}: {e}, using original")
-                        preprocessed_paths.append(path)  # Fallback to original
-
-                print(f"[PaddleOCR-VL] Preprocessing done in {time.time() - preprocess_start:.2f}s")
-                temp_paths = preprocessed_paths
-            elif do_preprocess and doc_preprocessor is None:
-                print("[PaddleOCR-VL] preprocess=True but DocPreprocessor not available, skipping")
+            # NOTE: Preprocessing (orientation + UVDoc) is now done on the backend server
+            # Images arriving here are already preprocessed, so we skip to VLM inference
 
             # Pass 1: Batch predict with orientation auto-detection, WITHOUT doc unwarping
             predict_start = time.time()

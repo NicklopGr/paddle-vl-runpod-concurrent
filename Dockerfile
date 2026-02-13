@@ -22,15 +22,20 @@ WORKDIR /app
 # Install system dependencies for OpenCV and PDF processing
 RUN apt-get update && apt-get install -y --no-install-recommends     libgl1-mesa-glx     libglib2.0-0     libsm6     libxext6     libxrender-dev     libgomp1     poppler-utils     curl     && rm -rf /var/lib/apt/lists/*
 
-# Install PaddlePaddle CPU (layout detection uses CPU, VLM uses vLLM server on GPU)
-# CPU version avoids CUDA library conflicts with vLLM
-RUN pip install --no-cache-dir paddlepaddle==3.0.0
+# Base image (paddlex-genai-vllm-server) has paddlepaddle-gpu 3.0.0b2 pre-installed
+# Using GPU paddle allows CV_DEVICE=gpu for layout detection (PP-DocLayoutV3)
+# This eliminates "cv worker: std::exception" crashes from GPU/CPU state mismatch
 
 # Install PaddleOCR with doc-parser support
 RUN pip install --no-cache-dir "paddleocr[doc-parser]>=3.4.0" "paddlex>=3.4.0"
 
 # Install RunPod SDK
 RUN pip install --no-cache-dir runpod requests
+
+# Install FlashInfer for optimal vLLM sampling (H100 optimized)
+# Using cu124 (CUDA 12.4) for compatibility with base image
+RUN pip install --no-cache-dir flashinfer-python==0.2.2+cu124torch2.5 \
+    --extra-index-url https://flashinfer.ai/whl/cu124/torch2.5/
 
 # Pre-download layout model (PP-DocLayoutV3)
 RUN python -c "from paddleocr import PaddleOCRVL; print('PaddleOCR-VL imports ok')" || true
@@ -48,9 +53,9 @@ ENV PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK=True
 # Baked-in runtime defaults optimized for H100 GPU (can be overridden via RunPod env)
 # H100 optimization per Baidu official PaddleOCR-VL-1.5 config
 ENV PADDLE_VL_SERIALIZE=false
-# CRITICAL: CV_DEVICE must be 'cpu' because paddlepaddle is CPU-only (to avoid CUDA conflicts with vLLM)
-# Setting to 'gpu' causes "cv worker: std::exception" crashes due to GPU/CPU state mismatch
-ENV CV_DEVICE=cpu
+# CV_DEVICE=gpu uses paddlepaddle-gpu for layout detection (PP-DocLayoutV3)
+# Base image has paddlepaddle-gpu 3.0.0b2 with compatible CUDA libs
+ENV CV_DEVICE=gpu
 ENV PADDLE_VL_CPU_THREADS=4
 ENV PADDLE_VL_MAX_PAGES_PER_BATCH=64
 ENV PADDLE_VL_USE_QUEUES=true

@@ -450,6 +450,7 @@ async def handler(event):
             }
 
         skip_resize = job_input.get("skip_resize", False)
+        force_unwarp = job_input.get("force_unwarp", False)
 
         # Collect image bytes from URLs or base64
         image_bytes_list: list[bytes] = []
@@ -496,84 +497,110 @@ async def handler(event):
                 temp_paths.append(prepare_temp_file(img_bytes, i + 1, skip_resize))
             print(
                 f"[PaddleOCR-VL] Prepared {len(temp_paths)} temp file(s) in {time.time() - prep_start:.2f}s "
-                f"(skip_resize={skip_resize})"
+                f"(skip_resize={skip_resize}, force_unwarp={force_unwarp})"
             )
 
-            # Pass 1: Batch predict with orientation auto-detection, WITHOUT doc unwarping
-            predict_start = time.time()
-            results = await process_pages_with_fallback(pipeline, temp_paths)
-            predict_time = time.time() - predict_start
-            print(f"[PaddleOCR-VL] All pages processed in {predict_time:.2f}s")
-
-            # Map results to pages and detect collapsed rows
-            pages = []
-            collapsed_indices = []
-            for i, res in enumerate(results):
-                if res is None:
-                    # Page failed completely - create empty result
-                    page_result = {
-                        "page_number": i + 1,
-                        "markdown": "",
-                        "parsing_res_list": [],
-                        "json": None,
-                    }
-                    print(f"[PaddleOCR-VL] Page {i + 1} FAILED - empty result")
-                else:
-                    page_result = extract_page_result(res, page_number=i + 1)
-                    print(f"[PaddleOCR-VL] Page {i + 1} markdown length: {len(page_result['markdown'])}")
-                    if is_collapsed_page(page_result["markdown"]):
-                        collapsed_indices.append(i)
-
-                pages.append(page_result)
-
-            # Pass 2: Retry collapsed pages WITH doc unwarping
-            # UVDoc can crash with "cv worker: std::exception" on certain images
-            # See: https://github.com/PaddlePaddle/PaddleOCR/issues/17206
-            if collapsed_indices:
-                print(
-                    f"[PaddleOCR-VL] {len(collapsed_indices)} collapsed page(s) detected: "
-                    f"{[i + 1 for i in collapsed_indices]}, retrying with doc unwarping"
+            # Check if force_unwarp mode - use unwarping on ALL pages
+            if force_unwarp:
+                print("[PaddleOCR-VL] force_unwarp=True - using doc unwarping on ALL pages")
+                predict_start = time.time()
+                results = await process_batch_async(
+                    pipeline, temp_paths, use_orientation=True, use_unwarping=True
                 )
-                retry_paths = [temp_paths[i] for i in collapsed_indices]
+                predict_time = time.time() - predict_start
+                print(f"[PaddleOCR-VL] All pages processed with unwarping in {predict_time:.2f}s")
 
-                retry_success = False
-                for attempt in range(1, 3):
-                    try:
-                        retry_start = time.time()
-                        retry_results = await process_batch_async(
-                            pipeline,
-                            retry_paths,
-                            use_orientation=True,
-                            use_unwarping=True,
-                        )
-                        retry_time = time.time() - retry_start
-                        print(
-                            f"[PaddleOCR-VL] Doc unwarping retry completed in {retry_time:.2f}s for "
-                            f"{len(retry_paths)} page(s) (attempt {attempt})"
-                        )
+                # Map results to pages (no collapsed detection needed - already unwarped)
+                pages = []
+                for i, res in enumerate(results):
+                    if res is None:
+                        page_result = {
+                            "page_number": i + 1,
+                            "markdown": "",
+                            "parsing_res_list": [],
+                            "json": None,
+                        }
+                        print(f"[PaddleOCR-VL] Page {i + 1} FAILED - empty result")
+                    else:
+                        page_result = extract_page_result(res, page_number=i + 1)
+                        print(f"[PaddleOCR-VL] Page {i + 1} markdown length: {len(page_result['markdown'])}")
+                    pages.append(page_result)
+            else:
+                # Pass 1: Batch predict with orientation auto-detection, WITHOUT doc unwarping
+                predict_start = time.time()
+                results = await process_pages_with_fallback(pipeline, temp_paths)
+                predict_time = time.time() - predict_start
+                print(f"[PaddleOCR-VL] All pages processed in {predict_time:.2f}s")
 
-                        for j, orig_idx in enumerate(collapsed_indices):
-                            page_result = extract_page_result(retry_results[j], page_number=orig_idx + 1)
-                            print(
-                                f"[PaddleOCR-VL] Page {orig_idx + 1} retried: markdown length "
-                                f"{len(page_result['markdown'])}"
-                            )
-                            pages[orig_idx] = page_result
+                # Map results to pages and detect collapsed rows
+                pages = []
+                collapsed_indices = []
+                for i, res in enumerate(results):
+                    if res is None:
+                        # Page failed completely - create empty result
+                        page_result = {
+                            "page_number": i + 1,
+                            "markdown": "",
+                            "parsing_res_list": [],
+                            "json": None,
+                        }
+                        print(f"[PaddleOCR-VL] Page {i + 1} FAILED - empty result")
+                    else:
+                        page_result = extract_page_result(res, page_number=i + 1)
+                        print(f"[PaddleOCR-VL] Page {i + 1} markdown length: {len(page_result['markdown'])}")
+                        if is_collapsed_page(page_result["markdown"]):
+                            collapsed_indices.append(i)
 
-                        retry_success = True
-                        break
+                    pages.append(page_result)
 
-                    except Exception as e:
-                        print(f"[PaddleOCR-VL] Doc unwarping attempt {attempt} failed: {e}")
-                        if attempt < 2:
-                            print("[PaddleOCR-VL] Retrying doc unwarping...")
-                            await asyncio.sleep(1)
-
-                if not retry_success:
+                # Pass 2: Retry collapsed pages WITH doc unwarping
+                # UVDoc can crash with "cv worker: std::exception" on certain images
+                # See: https://github.com/PaddlePaddle/PaddleOCR/issues/17206
+                if collapsed_indices:
                     print(
-                        "[PaddleOCR-VL] Doc unwarping failed after 2 attempts, "
-                        "keeping original results for collapsed pages"
+                        f"[PaddleOCR-VL] {len(collapsed_indices)} collapsed page(s) detected: "
+                        f"{[i + 1 for i in collapsed_indices]}, retrying with doc unwarping"
                     )
+                    retry_paths = [temp_paths[i] for i in collapsed_indices]
+
+                    retry_success = False
+                    for attempt in range(1, 3):
+                        try:
+                            retry_start = time.time()
+                            retry_results = await process_batch_async(
+                                pipeline,
+                                retry_paths,
+                                use_orientation=True,
+                                use_unwarping=True,
+                            )
+                            retry_time = time.time() - retry_start
+                            print(
+                                f"[PaddleOCR-VL] Doc unwarping retry completed in {retry_time:.2f}s for "
+                                f"{len(retry_paths)} page(s) (attempt {attempt})"
+                            )
+
+                            for j, orig_idx in enumerate(collapsed_indices):
+                                page_result = extract_page_result(retry_results[j], page_number=orig_idx + 1)
+                                print(
+                                    f"[PaddleOCR-VL] Page {orig_idx + 1} retried: markdown length "
+                                    f"{len(page_result['markdown'])}"
+                                )
+                                pages[orig_idx] = page_result
+
+                            retry_success = True
+                            break
+
+                        except Exception as e:
+                            print(f"[PaddleOCR-VL] Doc unwarping attempt {attempt} failed: {e}")
+                            if attempt < 2:
+                                print("[PaddleOCR-VL] Retrying doc unwarping...")
+                                await asyncio.sleep(1)
+
+                    if not retry_success:
+                        print(
+                            "[PaddleOCR-VL] Doc unwarping failed after 2 attempts, "
+                            "keeping original results for collapsed pages"
+                        )
 
         finally:
             for tmp_path in temp_paths:

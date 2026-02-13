@@ -29,10 +29,6 @@ RUN apt-get update && apt-get install -y --no-install-recommends     libgl1-mesa
 # Install PaddleOCR with doc-parser support
 RUN pip install --no-cache-dir "paddleocr[doc-parser]>=3.4.0" "paddlex>=3.4.0"
 
-# Fix transformers version to be compatible with base image's vLLM
-# vLLM requires ProcessorMixin which was deprecated in transformers 4.50+
-RUN pip install --no-cache-dir "transformers>=4.40.0,<4.50.0"
-
 # Install RunPod SDK
 RUN pip install --no-cache-dir runpod requests
 

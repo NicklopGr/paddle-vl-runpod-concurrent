@@ -6,7 +6,7 @@ export DISABLE_MODEL_SOURCE_CHECK=True
 # Baked-in defaults optimized for H100 GPU (RunPod env can override these at deploy time)
 # H100 optimization per Baidu official PaddleOCR-VL-1.5 config:
 # - batch_size: 64 (official pipeline batch size)
-# - CV_DEVICE=gpu (uses paddlepaddle-gpu from base image for layout detection)
+# - CV_DEVICE=gpu (uses paddlepaddle-gpu installed in this image for layout detection)
 # - CPU_THREADS=4 (H100 pods have more CPU cores)
 # NOTE: Both VLM inference AND layout detection (PP-DocLayoutV3) run on GPU
 : "${PADDLE_VL_SERIALIZE:=false}"

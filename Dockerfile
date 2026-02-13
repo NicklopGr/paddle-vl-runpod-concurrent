@@ -70,6 +70,18 @@ RUN . /tmp/base_versions.env && \
     # Verify installation
     python -c "import torch; import torchvision; print(f'torch={torch.__version__}, torchvision={torchvision.__version__}')"
 
+# Step 4: Install PaddlePaddle GPU runtime (required for CV/layout on GPU)
+#
+# The vLLM genai_server is Torch-based, but the PaddleOCRVL pipeline (PP-DocLayoutV3,
+# orientation, UVDoc) requires `import paddle` at runtime.
+# Install a CUDA-matched wheel from Paddle's official package index (cu126/cu129, etc).
+RUN . /tmp/base_versions.env && \
+    CUDA_MAJOR=$(echo $CUDA_VERSION | cut -d. -f1,2 | tr -d '.') && \
+    PADDLE_INDEX="https://www.paddlepaddle.org.cn/packages/stable/cu${CUDA_MAJOR}/" && \
+    echo "Installing paddlepaddle-gpu from: ${PADDLE_INDEX}" && \
+    python -m pip install --no-cache-dir paddlepaddle-gpu -i "${PADDLE_INDEX}" && \
+    python -c "import paddle; print('paddle', paddle.__version__, 'compiled_with_cuda', paddle.device.is_compiled_with_cuda())"
+
 # Install RunPod SDK
 RUN pip install --no-cache-dir runpod requests
 
@@ -90,7 +102,7 @@ ENV PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK=True
 # H100 optimization per Baidu official PaddleOCR-VL-1.5 config
 ENV PADDLE_VL_SERIALIZE=false
 # CV_DEVICE=gpu uses paddlepaddle-gpu for layout detection (PP-DocLayoutV3)
-# Base image has paddlepaddle-gpu 3.0.0b2 with compatible CUDA libs
+# PaddlePaddle is installed explicitly in this Dockerfile (base image does not include it)
 ENV CV_DEVICE=gpu
 ENV PADDLE_VL_CPU_THREADS=4
 ENV PADDLE_VL_MAX_PAGES_PER_BATCH=64

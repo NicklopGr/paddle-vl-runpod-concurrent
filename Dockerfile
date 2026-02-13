@@ -29,6 +29,14 @@ RUN apt-get update && apt-get install -y --no-install-recommends     libgl1-mesa
 # Install PaddleOCR with doc-parser support
 RUN pip install --no-cache-dir "paddleocr[doc-parser]>=3.4.0" "paddlex>=3.4.0"
 
+# Fix transformers version for vLLM 0.10.2 compatibility (base image requirement)
+# Problem: paddleocr[doc-parser] pulls in transformers >= 5.0.0 which breaks vLLM
+# - vLLM 0.10.2 requires transformers < 5.0.0 (ProcessorMixin import fails otherwise)
+# - PaddleX genai-vllm-server specifies: transformers < 5.0.0
+# - PaddleOCR FAQ #16823 recommends: transformers==4.57.6
+# See: https://github.com/PaddlePaddle/PaddleOCR/issues/16823
+RUN pip install --no-cache-dir "transformers==4.57.6"
+
 # Install RunPod SDK
 RUN pip install --no-cache-dir runpod requests
 

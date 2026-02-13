@@ -74,12 +74,29 @@ RUN . /tmp/base_versions.env && \
 #
 # The vLLM genai_server is Torch-based, but the PaddleOCRVL pipeline (PP-DocLayoutV3,
 # orientation, UVDoc) requires `import paddle` at runtime.
-# Install a CUDA-matched wheel from Paddle's official package index (cu126/cu129, etc).
+# Install a compatible wheel from Paddle's official package index.
+# Note: Paddle publishes stable wheels for specific CUDA versions (e.g. cu126, cu129).
 RUN . /tmp/base_versions.env && \
-    CUDA_MAJOR=$(echo $CUDA_VERSION | cut -d. -f1,2 | tr -d '.') && \
-    PADDLE_INDEX="https://www.paddlepaddle.org.cn/packages/stable/cu${CUDA_MAJOR}/" && \
-    echo "Installing paddlepaddle-gpu from: ${PADDLE_INDEX}" && \
-    python -m pip install --no-cache-dir paddlepaddle-gpu -i "${PADDLE_INDEX}" && \
+    echo "Base CUDA_VERSION=${CUDA_VERSION}" && \
+    # Pin to a known-stable release to avoid pip picking beta/rc builds.
+    PADDLE_VERSION="${PADDLE_VERSION:-3.3.0}" && \
+    echo "PADDLE_VERSION=${PADDLE_VERSION}" && \
+    CUDA_MAJOR=$(echo $CUDA_VERSION | cut -d. -f1,2 | tr -d '.' || true) && \
+    CANDIDATES="cu${CUDA_MAJOR} cu129 cu126 cu118" && \
+    OK=0 && \
+    for CU in ${CANDIDATES}; do \
+        IDX="https://www.paddlepaddle.org.cn/packages/stable/${CU}/"; \
+        echo "Trying paddlepaddle-gpu from: ${IDX}"; \
+        if python -m pip install --no-cache-dir "paddlepaddle-gpu==${PADDLE_VERSION}" -i "${IDX}"; then \
+            echo "Installed paddlepaddle-gpu==${PADDLE_VERSION} from: ${IDX}"; \
+            OK=1; \
+            break; \
+        fi; \
+    done && \
+    if [ "${OK}" -ne 1 ]; then \
+        echo "ERROR: Failed to install paddlepaddle-gpu==${PADDLE_VERSION} for CUDA_VERSION=${CUDA_VERSION} (tried: ${CANDIDATES})" >&2; \
+        exit 1; \
+    fi && \
     python -c "import paddle; print('paddle', paddle.__version__, 'compiled_with_cuda', paddle.device.is_compiled_with_cuda())"
 
 # Install RunPod SDK

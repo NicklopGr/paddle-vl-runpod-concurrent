@@ -20,7 +20,7 @@ export PADDLE_VL_SERIALIZE CV_DEVICE PADDLE_VL_USE_QUEUES PADDLE_VL_VL_REC_MAX_C
 
 echo "[start.sh] Settings: PADDLE_VL_SERIALIZE=${PADDLE_VL_SERIALIZE}, CV_DEVICE=${CV_DEVICE}, PADDLE_VL_CPU_THREADS=${PADDLE_VL_CPU_THREADS}, PADDLE_VL_MAX_PAGES_PER_BATCH=${PADDLE_VL_MAX_PAGES_PER_BATCH}, PADDLE_VL_USE_QUEUES=${PADDLE_VL_USE_QUEUES}, PADDLE_VL_VL_REC_MAX_CONCURRENCY=${PADDLE_VL_VL_REC_MAX_CONCURRENCY}, PADDLE_VL_DOWNLOAD_WORKERS=${PADDLE_VL_DOWNLOAD_WORKERS}"
 
-# Limit CPU thread oversubscription (layout runs on CPU; many concurrent requests can thrash without caps)
+# Limit CPU thread oversubscription (pre/post-processing may still fan out threads under load)
 CPU_THREADS="${PADDLE_VL_CPU_THREADS}"
 : "${OMP_NUM_THREADS:=$CPU_THREADS}"
 : "${MKL_NUM_THREADS:=$CPU_THREADS}"
@@ -103,5 +103,5 @@ for i in $(seq 1 300); do
   sleep 1
 done
 
-# Start RunPod handler
-python -u /app/handler.py
+# Start RunPod handler (use Paddle venv so installing paddlepaddle-gpu doesn't disturb vLLM/Torch)
+/opt/paddle_venv/bin/python -u /app/handler.py

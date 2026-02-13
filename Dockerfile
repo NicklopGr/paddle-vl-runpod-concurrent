@@ -76,18 +76,31 @@ RUN . /tmp/base_versions.env && \
 # orientation, UVDoc) requires `import paddle` at runtime.
 # Install a compatible wheel from Paddle's official package index.
 # Note: Paddle publishes stable wheels for specific CUDA versions (e.g. cu126, cu129).
+# IMPORTANT:
+# - We do NOT import Paddle at build time, because the build environment does not have NVIDIA driver
+#   libraries mounted (libcuda.so.1), which would make `import paddle` fail even though runtime is fine.
+# - We install Paddle into a dedicated venv so its CUDA Python wheels don't clobber the base image's
+#   Torch/vLLM CUDA stack (they can coexist in separate processes).
+RUN python -m venv --system-site-packages /opt/paddle_venv && \
+    /opt/paddle_venv/bin/python -m pip install --no-cache-dir --upgrade pip
+
 RUN . /tmp/base_versions.env && \
     echo "Base CUDA_VERSION=${CUDA_VERSION}" && \
     # Pin to a known-stable release to avoid pip picking beta/rc builds.
     PADDLE_VERSION="${PADDLE_VERSION:-3.3.0}" && \
     echo "PADDLE_VERSION=${PADDLE_VERSION}" && \
     CUDA_MAJOR=$(echo $CUDA_VERSION | cut -d. -f1,2 | tr -d '.' || true) && \
-    CANDIDATES="cu${CUDA_MAJOR} cu129 cu126 cu118" && \
+    if [ "${CUDA_MAJOR}" = "128" ]; then \
+        # Paddle does not publish a cu128 index; cu129 is the closest for CUDA 12.8 base images.
+        CANDIDATES="cu129 cu126 cu118"; \
+    else \
+        CANDIDATES="cu${CUDA_MAJOR} cu129 cu126 cu118"; \
+    fi && \
     OK=0 && \
     for CU in ${CANDIDATES}; do \
         IDX="https://www.paddlepaddle.org.cn/packages/stable/${CU}/"; \
         echo "Trying paddlepaddle-gpu from: ${IDX}"; \
-        if python -m pip install --no-cache-dir "paddlepaddle-gpu==${PADDLE_VERSION}" -i "${IDX}"; then \
+        if /opt/paddle_venv/bin/python -m pip install --no-cache-dir "paddlepaddle-gpu==${PADDLE_VERSION}" -i "${IDX}"; then \
             echo "Installed paddlepaddle-gpu==${PADDLE_VERSION} from: ${IDX}"; \
             OK=1; \
             break; \
@@ -97,7 +110,7 @@ RUN . /tmp/base_versions.env && \
         echo "ERROR: Failed to install paddlepaddle-gpu==${PADDLE_VERSION} for CUDA_VERSION=${CUDA_VERSION} (tried: ${CANDIDATES})" >&2; \
         exit 1; \
     fi && \
-    python -c "import paddle; print('paddle', paddle.__version__, 'compiled_with_cuda', paddle.device.is_compiled_with_cuda())"
+    /opt/paddle_venv/bin/python -m pip show paddlepaddle-gpu
 
 # Install RunPod SDK
 RUN pip install --no-cache-dir runpod requests

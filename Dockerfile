@@ -48,7 +48,9 @@ ENV PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK=True
 # Baked-in runtime defaults optimized for H100 GPU (can be overridden via RunPod env)
 # H100 optimization per Baidu official PaddleOCR-VL-1.5 config
 ENV PADDLE_VL_SERIALIZE=false
-ENV CV_DEVICE=gpu
+# CRITICAL: CV_DEVICE must be 'cpu' because paddlepaddle is CPU-only (to avoid CUDA conflicts with vLLM)
+# Setting to 'gpu' causes "cv worker: std::exception" crashes due to GPU/CPU state mismatch
+ENV CV_DEVICE=cpu
 ENV PADDLE_VL_CPU_THREADS=4
 ENV PADDLE_VL_MAX_PAGES_PER_BATCH=64
 ENV PADDLE_VL_USE_QUEUES=true

@@ -6,10 +6,11 @@ export DISABLE_MODEL_SOURCE_CHECK=True
 # Baked-in defaults optimized for H100 GPU (RunPod env can override these at deploy time)
 # H100 optimization per Baidu official PaddleOCR-VL-1.5 config:
 # - batch_size: 64 (official pipeline batch size)
-# - CV_DEVICE=gpu (H100 has proper Ampere+ CUDA kernels, no cv worker crashes)
+# - CV_DEVICE=cpu (CRITICAL: paddlepaddle is CPU-only to avoid CUDA conflicts with vLLM)
 # - CPU_THREADS=4 (H100 pods have more CPU cores)
+# NOTE: VLM inference runs on GPU via vLLM, but layout detection (PP-DocLayoutV3) runs on CPU
 : "${PADDLE_VL_SERIALIZE:=false}"
-: "${CV_DEVICE:=gpu}"
+: "${CV_DEVICE:=cpu}"
 : "${PADDLE_VL_USE_QUEUES:=true}"
 : "${PADDLE_VL_VL_REC_MAX_CONCURRENCY:=64}"
 : "${PADDLE_VL_MAX_PAGES_PER_BATCH:=64}"

@@ -81,6 +81,8 @@ MAX_PAGES_PER_BATCH = max(1, _env_int("PADDLE_VL_MAX_PAGES_PER_BATCH", 9))
 DOWNLOAD_WORKERS = max(1, _env_int("PADDLE_VL_DOWNLOAD_WORKERS", 20))
 USE_QUEUES = os.environ.get("PADDLE_VL_USE_QUEUES", "true").lower() == "true"
 VL_REC_MAX_CONCURRENCY = max(1, _env_int("PADDLE_VL_VL_REC_MAX_CONCURRENCY", 20))
+# IMPORTANT: Must be 'cpu' because paddlepaddle is CPU-only (to avoid CUDA conflicts with vLLM)
+# Setting to 'gpu' causes "cv worker: std::exception" crashes due to GPU/CPU state mismatch
 CV_DEVICE = os.environ.get("CV_DEVICE", os.environ.get("PADDLE_VL_DEVICE", "cpu"))
 
 # Thread pool for parallel image downloads (match concurrency_modifier for job-level parallelism)
@@ -149,15 +151,15 @@ def load_pipeline():
     print(f"[PaddleOCR-VL] Pipeline loaded in {elapsed:.2f}s (vLLM v1.5 backend)")
 
     # Load DocPreprocessor for server-side preprocessing (orientation + UVDoc)
+    # NOTE: Use paddleocr.DocPreprocessor (NOT paddlex.create_pipeline) because it accepts constructor params
     try:
-        from paddlex import create_pipeline
-        doc_preprocessor = create_pipeline(
-            pipeline="doc_preprocessor",
+        from paddleocr import DocPreprocessor
+        doc_preprocessor = DocPreprocessor(
             use_doc_orientation_classify=True,
             use_doc_unwarping=True,
             device=CV_DEVICE,
         )
-        print("[PaddleOCR-VL] DocPreprocessor loaded for server-side preprocessing")
+        print(f"[PaddleOCR-VL] DocPreprocessor loaded for server-side preprocessing (device={CV_DEVICE})")
     except Exception as e:
         print(f"[PaddleOCR-VL] DocPreprocessor load failed (non-fatal, will skip preprocessing): {e}")
         doc_preprocessor = None

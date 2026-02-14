@@ -1,5 +1,5 @@
 #!/bin/bash
-set -e
+set -euo pipefail
 
 export DISABLE_MODEL_SOURCE_CHECK=True
 
@@ -70,14 +70,20 @@ fi
 export PADDLE_VL_WORKER_CONCURRENCY PADDLE_VL_MAX_PAGES_PER_BATCH PADDLE_VL_VL_REC_MAX_CONCURRENCY PADDLE_VL_USE_QUEUES PADDLE_VL_DOWNLOAD_WORKERS
 echo "[start.sh] Runtime: worker_concurrency=${PADDLE_VL_WORKER_CONCURRENCY}, max_pages_per_batch=${PADDLE_VL_MAX_PAGES_PER_BATCH}, vl_rec_max_concurrency=${PADDLE_VL_VL_REC_MAX_CONCURRENCY}, use_queues=${PADDLE_VL_USE_QUEUES}, download_workers=${PADDLE_VL_DOWNLOAD_WORKERS}"
 
-# Create vLLM backend config file (--backend_config expects YAML file, not string)
-# H100 optimized: 85% GPU memory utilization, increased batch tokens
-# Note: hf-overrides enables fast image processor (requires torchvision)
-cat > /tmp/vllm_config.yaml << 'EOF'
-gpu-memory-utilization: 0.85
-max-num-batched-tokens: 16384
-hf-overrides: "{\"use_fast\": true}"
-EOF
+# Create vLLM backend config file (--backend_config expects YAML file, not JSON/dict).
+# Keep hf-overrides optional; some PaddleOCR builds are strict about JSON-string typing.
+: "${VLLM_GPU_MEMORY_UTILIZATION:=0.85}"
+: "${VLLM_MAX_NUM_BATCHED_TOKENS:=16384}"
+: "${VLLM_HF_OVERRIDES_JSON:=}" # e.g. {"use_fast": true}
+
+{
+  echo "gpu-memory-utilization: ${VLLM_GPU_MEMORY_UTILIZATION}"
+  echo "max-num-batched-tokens: ${VLLM_MAX_NUM_BATCHED_TOKENS}"
+  if [ -n "${VLLM_HF_OVERRIDES_JSON}" ]; then
+    # Single-quoted YAML scalar so YAML->argparse gets a *string* and argparse json.loads can parse it.
+    echo "hf-overrides: '${VLLM_HF_OVERRIDES_JSON}'"
+  fi
+} > /tmp/vllm_config.yaml
 
 # Start PaddleOCR genai server with vLLM backend
 echo "[start.sh] Starting PaddleOCR genai_server with vLLM backend (gpu-memory-utilization=0.85, max-num-batched-tokens=16384)..."
@@ -105,17 +111,15 @@ done
 
 # Start RunPod handler (Paddle runs from /opt/paddle_venv).
 #
-# Paddle's pip wheels ship their own CUDA libs under site-packages/nvidia/*/lib.
-# Ensure the handler prefers those libs so Paddle uses a consistent CUDA stack.
+# Paddle wheels may ship CUDA libs under site-packages/nvidia/*/lib. Prefer them for the handler
+# process only (keeps the vLLM process' environment untouched).
 shopt -s nullglob
-paddle_lib_dirs=(/opt/paddle_venv/lib/python3.10/site-packages/nvidia/*/lib)
+paddle_lib_dirs=(/opt/paddle_venv/lib/python*/site-packages/nvidia/*/lib)
 shopt -u nullglob
 if [ "${#paddle_lib_dirs[@]}" -gt 0 ]; then
   PADDLE_NVIDIA_LD_LIBRARY_PATH="$(IFS=:; echo "${paddle_lib_dirs[*]}")"
-  export LD_LIBRARY_PATH="${PADDLE_NVIDIA_LD_LIBRARY_PATH}:${LD_LIBRARY_PATH}"
-  echo "[start.sh] Prepending Paddle CUDA libs to LD_LIBRARY_PATH (${#paddle_lib_dirs[@]} dirs)"
-else
-  echo "[start.sh] WARNING: no /opt/paddle_venv/.../nvidia/*/lib dirs found; Paddle may fail to load CUDA libs"
+  echo "[start.sh] Handler LD_LIBRARY_PATH prepend (${#paddle_lib_dirs[@]} dirs)"
+  exec env LD_LIBRARY_PATH="${PADDLE_NVIDIA_LD_LIBRARY_PATH}:${LD_LIBRARY_PATH:-}" /opt/paddle_venv/bin/python -u /app/handler.py
 fi
 
-/opt/paddle_venv/bin/python -u /app/handler.py
+exec /opt/paddle_venv/bin/python -u /app/handler.py

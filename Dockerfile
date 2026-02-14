@@ -1,130 +1,71 @@
-# PaddleOCR-VL-1.5 RunPod Serverless Container
+# PaddleOCR-VL-1.5 RunPod Serverless Container (single container, two processes)
 #
-# Architecture:
-#   paddleocr genai_server (background, port 8080) - vLLM backend with PaddleOCR-VL-1.5-0.9B
-#   handler.py (RunPod serverless) - uses PaddleOCRVL pipeline client:
-#     1. PP-DocLayoutV3 layout detection
-#     2. Crops -> vLLM server at localhost:8080 (batched)
-#     3. UVDoc fallback for collapsed table rows
-#     4. Post-processing -> markdown
+# Process 1 (base image runtime): PaddleOCR genai_server (vLLM backend), port 8080
+# Process 2 (isolated venv): RunPod handler that runs PP-DocLayoutV3/UVDoc on GPU via Paddle
 #
-# Uses official pre-built base image that has vLLM with compatible CUDA libraries.
-# Per: https://github.com/PaddlePaddle/PaddleOCR/tree/main/deploy/paddleocr_vl_docker
-#
-# This avoids the nvidia-cublas version conflict between paddlepaddle-gpu and vllm.
+# Key design goal: do NOT mix Torch/vLLM and Paddle in the same Python environment.
+# That avoids CUDA minor-version ABI conflicts and avoids breaking the prebuilt vLLM stack.
 
-FROM ccr-2vdh3abv-pub.cnc.bj.baidubce.com/paddlepaddle/paddlex-genai-vllm-server:latest
+ARG VLM_IMAGE=ccr-2vdh3abv-pub.cnc.bj.baidubce.com/paddlepaddle/paddleocr-genai-vllm-server:latest-nvidia-gpu
+FROM ${VLM_IMAGE}
 
 USER root
-
 WORKDIR /app
 
-# Install system dependencies for OpenCV and PDF processing
-RUN apt-get update && apt-get install -y --no-install-recommends     libgl1-mesa-glx     libglib2.0-0     libsm6     libxext6     libxrender-dev     libgomp1     poppler-utils     curl     && rm -rf /var/lib/apt/lists/*
+# Minimal system deps used by start.sh (health checks) and common image libs.
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    curl \
+    libgl1 \
+    libglib2.0-0 \
+    libgomp1 \
+    libsm6 \
+    libxext6 \
+    libxrender1 \
+    && rm -rf /var/lib/apt/lists/*
 
-# Base image (paddlex-genai-vllm-server) has vLLM pre-installed with specific torch version.
-# We need to preserve the torch/torchvision compatibility after installing paddleocr.
-
-# Step 1: Save base image's torch version and index URL before paddleocr potentially breaks it
-RUN python -c "import torch; v=torch.__version__; print(f'TORCH_VERSION={v}')" > /tmp/base_versions.env && \
-    python -c "import torch; cuda=torch.version.cuda; print(f'CUDA_VERSION={cuda}')" >> /tmp/base_versions.env && \
-    cat /tmp/base_versions.env
-
-# Step 2: Install PaddleOCR (this may install incompatible torch/torchvision versions)
-RUN pip install --no-cache-dir "paddleocr[doc-parser]>=3.4.0" "paddlex>=3.4.0"
-
-# Step 3: Fix torch/torchvision/transformers compatibility
-#
-# Problem: paddleocr[doc-parser] installs incompatible package versions that break vLLM:
-#   1. torchvision gets upgraded to version incompatible with base image's torch
-#      → RuntimeError: operator torchvision::nms does not exist
-#   2. transformers gets upgraded to 5.0+ which breaks vLLM's ProcessorMixin import
-#      → ModuleNotFoundError: Could not import module 'ProcessorMixin'
-#
-# Solution: Restore torch/torchvision to base image versions, fix transformers
-#
-# References:
-#   - https://github.com/PaddlePaddle/PaddleOCR/issues/16823
-#   - https://github.com/vllm-project/vllm/issues/18776
-#   - https://github.com/pytorch/vision#installation
-RUN . /tmp/base_versions.env && \
-    echo "Restoring torch=${TORCH_VERSION} for CUDA ${CUDA_VERSION}" && \
-    # Determine the correct PyTorch wheel index based on CUDA version
-    CUDA_MAJOR=$(echo $CUDA_VERSION | cut -d. -f1,2 | tr -d '.') && \
-    PYTORCH_INDEX="https://download.pytorch.org/whl/cu${CUDA_MAJOR}" && \
-    echo "Using PyTorch index: ${PYTORCH_INDEX}" && \
-    # Extract torch version without build suffix (e.g., 2.8.0+cu126 -> 2.8.0)
-    TORCH_BASE=$(echo $TORCH_VERSION | cut -d'+' -f1) && \
-    # Determine matching torchvision version based on torch version
-    # Compatibility: torch 2.5->tv0.20, 2.6->0.21, 2.7->0.22, 2.8->0.23, 2.9->0.24, 2.10->0.25
-    TORCH_MINOR=$(echo $TORCH_BASE | cut -d. -f2) && \
-    TV_MINOR=$((TORCH_MINOR + 15)) && \
-    TV_VERSION="0.${TV_MINOR}.0" && \
-    echo "Torch ${TORCH_BASE} requires torchvision ${TV_VERSION}" && \
-    # Reinstall torch and torchvision from the correct index
-    pip install --no-cache-dir \
-        "torch==${TORCH_BASE}" \
-        "torchvision==${TV_VERSION}" \
-        "transformers>=4.40.0,<5.0.0" \
-        --index-url "${PYTORCH_INDEX}" && \
-    # Verify installation
-    python -c "import torch; import torchvision; print(f'torch={torch.__version__}, torchvision={torchvision.__version__}')"
-
-# Step 4: Install PaddlePaddle GPU runtime (required for CV/layout on GPU)
-#
-# The vLLM genai_server is Torch-based, but the PaddleOCRVL pipeline (PP-DocLayoutV3,
-# orientation, UVDoc) requires `import paddle` at runtime.
-# Install a compatible wheel from Paddle's official package index.
-# Note: Paddle publishes stable wheels for specific CUDA versions (e.g. cu126, cu129).
-# IMPORTANT:
-# - We do NOT import Paddle at build time, because the build environment does not have NVIDIA driver
-#   libraries mounted (libcuda.so.1), which would make `import paddle` fail even though runtime is fine.
-# - We install Paddle into a dedicated venv so its CUDA Python wheels don't clobber the base image's
-#   Torch/vLLM CUDA stack (they can coexist in separate processes).
-# - The venv is isolated (no system-site-packages) to avoid pip uninstalling/upgrading the base image
-#   CUDA wheels that vLLM/Torch rely on.
+# Create isolated venv for PaddleOCRVL pipeline (Paddle + CV models).
 RUN python -m venv /opt/paddle_venv && \
     /opt/paddle_venv/bin/python -m pip install --no-cache-dir --upgrade pip
 
-RUN . /tmp/base_versions.env && \
+# Determine the base image CUDA version from torch (vLLM stack) and install matching Paddle wheel.
+# Production rule: only install Paddle from a *matching* CUDA index. If the base image is built on a
+# CUDA minor version that Paddle does not publish (e.g. cu128), fail the build rather than shipping
+# a fragile "closest match" that crashes at runtime.
+ARG PADDLE_VERSION=
+RUN CUDA_VERSION="$(python -c 'import torch; print(torch.version.cuda)')" && \
     echo "Base CUDA_VERSION=${CUDA_VERSION}" && \
-    # Pin to a known-stable release to avoid pip picking beta/rc builds.
-    PADDLE_VERSION="${PADDLE_VERSION:-3.3.0}" && \
-    echo "PADDLE_VERSION=${PADDLE_VERSION}" && \
-    CUDA_MAJOR=$(echo $CUDA_VERSION | cut -d. -f1,2 | tr -d '.' || true) && \
-    if [ "${CUDA_MAJOR}" = "128" ]; then \
-        # Paddle does not publish a cu128 index; cu129 is the closest for CUDA 12.8 base images.
-        CANDIDATES="cu129 cu126"; \
+    CUDA_MAJOR="$(echo "${CUDA_VERSION}" | cut -d. -f1,2 | tr -d '.')" && \
+    case "${CUDA_MAJOR}" in \
+      126) PADDLE_CU="cu126" ;; \
+      129) PADDLE_CU="cu129" ;; \
+      118) PADDLE_CU="cu118" ;; \
+      *) echo "ERROR: Base CUDA_VERSION=${CUDA_VERSION} is not supported for Paddle GPU wheels. Use a paddleocr-genai-vllm-server image built on CUDA 12.6 (cu126) or 12.9 (cu129)." >&2; exit 1 ;; \
+    esac && \
+    PADDLE_INDEX="https://www.paddlepaddle.org.cn/packages/stable/${PADDLE_CU}/" && \
+    if [ -n "${PADDLE_VERSION:-}" ]; then \
+      echo "Installing paddlepaddle-gpu==${PADDLE_VERSION} from: ${PADDLE_INDEX}"; \
+      /opt/paddle_venv/bin/python -m pip install --no-cache-dir "paddlepaddle-gpu==${PADDLE_VERSION}" -i "${PADDLE_INDEX}"; \
     else \
-        CANDIDATES="cu${CUDA_MAJOR} cu129 cu126"; \
-    fi && \
-    OK=0 && \
-    for CU in ${CANDIDATES}; do \
-        IDX="https://www.paddlepaddle.org.cn/packages/stable/${CU}/"; \
-        echo "Trying paddlepaddle-gpu from: ${IDX}"; \
-        if /opt/paddle_venv/bin/python -m pip install --no-cache-dir "paddlepaddle-gpu==${PADDLE_VERSION}" -i "${IDX}"; then \
-            echo "Installed paddlepaddle-gpu==${PADDLE_VERSION} from: ${IDX}"; \
-            OK=1; \
-            break; \
-        fi; \
-    done && \
-    if [ "${OK}" -ne 1 ]; then \
-        echo "ERROR: Failed to install paddlepaddle-gpu==${PADDLE_VERSION} for CUDA_VERSION=${CUDA_VERSION} (tried: ${CANDIDATES})" >&2; \
-        exit 1; \
-    fi && \
-    /opt/paddle_venv/bin/python -m pip show paddlepaddle-gpu && \
-    # Install the handler's runtime deps into the same venv (keeps Paddle isolated from vLLM/Torch).
-    /opt/paddle_venv/bin/python -m pip install --no-cache-dir \
-        "paddleocr[doc-parser]>=3.4.0" \
-        "paddlex>=3.4.0" \
+      echo "Installing latest paddlepaddle-gpu from: ${PADDLE_INDEX}"; \
+      /opt/paddle_venv/bin/python -m pip install --no-cache-dir "paddlepaddle-gpu" -i "${PADDLE_INDEX}"; \
+    fi
+
+# Install PaddleOCR-VL pipeline + handler deps into the Paddle venv.
+# Keep transformers <5 for vLLM compatibility in case the handler imports it indirectly.
+RUN BASE_PADDLEOCR_VERSION="$(python -c 'import importlib.metadata as m; print(m.version(\"paddleocr\"))' 2>/dev/null || true)" && \
+    if [ -n "${BASE_PADDLEOCR_VERSION}" ]; then \
+      echo "Base paddleocr version: ${BASE_PADDLEOCR_VERSION}"; \
+      /opt/paddle_venv/bin/python -m pip install --no-cache-dir \
+        "paddleocr[doc-parser]==${BASE_PADDLEOCR_VERSION}" \
         "transformers>=4.40.0,<5.0.0" \
-        runpod requests
-
-# Install RunPod SDK
-RUN pip install --no-cache-dir runpod requests
-
-# Pre-download layout model (PP-DocLayoutV3)
-RUN python -c "from paddleocr import PaddleOCRVL; print('PaddleOCR-VL imports ok')" || true
+        runpod requests; \
+    else \
+      echo "Base paddleocr version not detected; installing latest compatible paddleocr[doc-parser]."; \
+      /opt/paddle_venv/bin/python -m pip install --no-cache-dir \
+        "paddleocr[doc-parser]>=3.4.0" \
+        "transformers>=4.40.0,<5.0.0" \
+        runpod requests; \
+    fi
 
 COPY handler.py /app/
 COPY --chmod=755 start.sh /app/
@@ -136,11 +77,8 @@ ENV RUNPOD_DEBUG_LEVEL=INFO
 ENV DISABLE_MODEL_SOURCE_CHECK=True
 ENV PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK=True
 
-# Baked-in runtime defaults optimized for H100 GPU (can be overridden via RunPod env)
-# H100 optimization per Baidu official PaddleOCR-VL-1.5 config
+# Baked-in runtime defaults (RunPod env can override)
 ENV PADDLE_VL_SERIALIZE=false
-# CV_DEVICE=gpu uses paddlepaddle-gpu for layout detection (PP-DocLayoutV3)
-# PaddlePaddle is installed explicitly in this Dockerfile (base image does not include it)
 ENV CV_DEVICE=gpu
 ENV PADDLE_VL_CPU_THREADS=4
 ENV PADDLE_VL_MAX_PAGES_PER_BATCH=64

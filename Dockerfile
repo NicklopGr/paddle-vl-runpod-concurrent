@@ -29,18 +29,19 @@ RUN python -m venv /opt/paddle_venv && \
 
 # Determine the base image CUDA version from torch (vLLM stack) and install matching Paddle wheel.
 # Production rule: only install Paddle from a *matching* CUDA index. If the base image is built on a
-# CUDA minor version that Paddle does not publish (e.g. cu128), fail the build rather than shipping
+# CUDA minor version that Paddle does not publish, fail the build rather than shipping
 # a fragile "closest match" that crashes at runtime.
 ARG PADDLE_VERSION=
-RUN CUDA_VERSION="$(python -c 'import torch; print(torch.version.cuda)')" && \
-    echo "Base CUDA_VERSION=${CUDA_VERSION}" && \
-    CUDA_MAJOR="$(echo "${CUDA_VERSION}" | cut -d. -f1,2 | tr -d '.')" && \
-    case "${CUDA_MAJOR}" in \
-      126) PADDLE_CU="cu126" ;; \
-      129) PADDLE_CU="cu129" ;; \
-      118) PADDLE_CU="cu118" ;; \
-      *) echo "ERROR: Base CUDA_VERSION=${CUDA_VERSION} is not supported for Paddle GPU wheels. Use a paddleocr-genai-vllm-server image built on CUDA 12.6 (cu126) or 12.9 (cu129)." >&2; exit 1 ;; \
-    esac && \
+	RUN CUDA_VERSION="$(python -c 'import torch; print(torch.version.cuda)')" && \
+	    echo "Base CUDA_VERSION=${CUDA_VERSION}" && \
+	    CUDA_MAJOR="$(echo "${CUDA_VERSION}" | cut -d. -f1,2 | tr -d '.')" && \
+	    case "${CUDA_MAJOR}" in \
+	      126) PADDLE_CU="cu126" ;; \
+	      128) PADDLE_CU="cu128" ;; \
+	      129) PADDLE_CU="cu129" ;; \
+	      118) PADDLE_CU="cu118" ;; \
+	      *) echo "ERROR: Base CUDA_VERSION=${CUDA_VERSION} is not supported for Paddle GPU wheels. Use a paddleocr-genai-vllm-server image built on CUDA 12.6 (cu126), 12.8 (cu128), or 12.9 (cu129)." >&2; exit 1 ;; \
+	    esac && \
     PADDLE_INDEX="https://www.paddlepaddle.org.cn/packages/stable/${PADDLE_CU}/" && \
     if [ -n "${PADDLE_VERSION:-}" ]; then \
       echo "Installing paddlepaddle-gpu==${PADDLE_VERSION} from: ${PADDLE_INDEX}"; \

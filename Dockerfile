@@ -40,8 +40,7 @@ RUN echo "Installing paddlepaddle-gpu from: ${PADDLE_INDEX}" && \
     else \
       echo "Installing latest paddlepaddle-gpu"; \
       /opt/paddle_venv/bin/python -m pip install --no-cache-dir "paddlepaddle-gpu" -i "${PADDLE_INDEX}"; \
-    fi && \
-    /opt/paddle_venv/bin/python -c "import paddle; print('paddle', paddle.__version__, 'compiled_with_cuda', paddle.device.is_compiled_with_cuda())"
+    fi
 
 # Install PaddleOCR-VL pipeline + handler deps into the Paddle venv.
 # Keep transformers <5 for vLLM compatibility in case the handler imports it indirectly.

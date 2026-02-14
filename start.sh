@@ -113,6 +113,17 @@ done
 #
 # Paddle wheels may ship CUDA libs under site-packages/nvidia/*/lib. Prefer them for the handler
 # process only (keeps the vLLM process' environment untouched).
+echo "[start.sh] Checking Paddle runtime (/opt/paddle_venv)..."
+/opt/paddle_venv/bin/python - <<'PY'
+import paddle
+
+print("paddle", paddle.__version__, "compiled_with_cuda", paddle.device.is_compiled_with_cuda())
+try:
+    print("paddle_device", paddle.device.get_device())
+except Exception as e:
+    print("paddle_device_error", repr(e))
+PY
+
 shopt -s nullglob
 paddle_lib_dirs=(/opt/paddle_venv/lib/python*/site-packages/nvidia/*/lib)
 shopt -u nullglob

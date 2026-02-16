@@ -69,13 +69,16 @@ ENV RUNPOD_DEBUG_LEVEL=INFO
 ENV DISABLE_MODEL_SOURCE_CHECK=True
 ENV PADDLE_PDX_DISABLE_MODEL_SOURCE_CHECK=True
 
-# Baked-in runtime defaults (RunPod env can override)
+# ==========================================================================
+# H100 GPU CONFIGURATION (RunPod env can override at deploy time)
+# ==========================================================================
+ENV PADDLE_VL_WORKER_CONCURRENCY=1
+ENV PADDLE_VL_MAX_PAGES_PER_BATCH=64
+ENV PADDLE_VL_VL_REC_MAX_CONCURRENCY=64
+ENV PADDLE_VL_USE_QUEUES=true
+ENV PADDLE_VL_DOWNLOAD_WORKERS=20
 ENV PADDLE_VL_SERIALIZE=false
 ENV CV_DEVICE=gpu
 ENV PADDLE_VL_CPU_THREADS=4
-ENV PADDLE_VL_MAX_PAGES_PER_BATCH=64
-ENV PADDLE_VL_USE_QUEUES=true
-ENV PADDLE_VL_VL_REC_MAX_CONCURRENCY=64
-ENV PADDLE_VL_DOWNLOAD_WORKERS=20
 
 CMD ["bash", "/app/start.sh"]

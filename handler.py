@@ -75,16 +75,16 @@ def _env_int(name: str, default: int) -> int:
         return default
 
 
-# Config (baked defaults are set in start.sh/Dockerfile; these allow override)
+# ==========================================================================
+# CONFIGURATION - Defaults match Dockerfile/start.sh for H100 deployment
+# ==========================================================================
 WORKER_MAX_CONCURRENCY = max(1, _env_int("PADDLE_VL_WORKER_CONCURRENCY", 1))
 SERIALIZE_PREDICT = os.environ.get("PADDLE_VL_SERIALIZE", "false").lower() == "true"
-MAX_PAGES_PER_BATCH = max(1, _env_int("PADDLE_VL_MAX_PAGES_PER_BATCH", 9))
+MAX_PAGES_PER_BATCH = max(1, _env_int("PADDLE_VL_MAX_PAGES_PER_BATCH", 64))  # H100 can handle 64 pages
 DOWNLOAD_WORKERS = max(1, _env_int("PADDLE_VL_DOWNLOAD_WORKERS", 20))
 USE_QUEUES = os.environ.get("PADDLE_VL_USE_QUEUES", "true").lower() == "true"
-VL_REC_MAX_CONCURRENCY = max(1, _env_int("PADDLE_VL_VL_REC_MAX_CONCURRENCY", 20))
-# CV_DEVICE=gpu uses paddlepaddle-gpu from base image (paddlex-genai-vllm-server)
-# for layout detection (PP-DocLayoutV3). Both VLM and layout run on GPU now.
-CV_DEVICE = os.environ.get("CV_DEVICE", os.environ.get("PADDLE_VL_DEVICE", "gpu"))
+VL_REC_MAX_CONCURRENCY = max(1, _env_int("PADDLE_VL_VL_REC_MAX_CONCURRENCY", 64))  # VLM inference concurrency
+CV_DEVICE = os.environ.get("CV_DEVICE", "gpu")  # GPU for layout detection (PP-DocLayoutV3)
 
 # Thread pool for parallel image downloads (match concurrency_modifier for job-level parallelism)
 _download_pool = ThreadPoolExecutor(max_workers=DOWNLOAD_WORKERS)

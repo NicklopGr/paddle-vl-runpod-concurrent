@@ -3,22 +3,25 @@ set -euo pipefail
 
 export DISABLE_MODEL_SOURCE_CHECK=True
 
-# Baked-in defaults optimized for H100 GPU (RunPod env can override these at deploy time)
-# H100 optimization per Baidu official PaddleOCR-VL-1.5 config:
-# - batch_size: 64 (official pipeline batch size)
-# - CV_DEVICE=gpu (uses paddlepaddle-gpu installed in this image for layout detection)
-# - CPU_THREADS=4 (H100 pods have more CPU cores)
-# NOTE: Both VLM inference AND layout detection (PP-DocLayoutV3) run on GPU
+# ==========================================================================
+# H100 GPU CONFIGURATION (RunPod env can override at deploy time)
+# ==========================================================================
+# - MAX_PAGES_PER_BATCH=64: Process 64 pages simultaneously
+# - VL_REC_MAX_CONCURRENCY=64: VLM inference concurrency via vLLM
+# - CV_DEVICE=gpu: Layout detection (PP-DocLayoutV3) runs on GPU
+# - WORKER_CONCURRENCY=1: Single job at a time for stability
+# - CPU_THREADS=4: H100 pods have more CPU cores
+: "${PADDLE_VL_WORKER_CONCURRENCY:=1}"
+: "${PADDLE_VL_MAX_PAGES_PER_BATCH:=64}"
+: "${PADDLE_VL_VL_REC_MAX_CONCURRENCY:=64}"
+: "${PADDLE_VL_USE_QUEUES:=true}"
+: "${PADDLE_VL_DOWNLOAD_WORKERS:=20}"
 : "${PADDLE_VL_SERIALIZE:=false}"
 : "${CV_DEVICE:=gpu}"
-: "${PADDLE_VL_USE_QUEUES:=true}"
-: "${PADDLE_VL_VL_REC_MAX_CONCURRENCY:=64}"
-: "${PADDLE_VL_MAX_PAGES_PER_BATCH:=64}"
-: "${PADDLE_VL_DOWNLOAD_WORKERS:=20}"
 : "${PADDLE_VL_CPU_THREADS:=4}"
-export PADDLE_VL_SERIALIZE CV_DEVICE PADDLE_VL_USE_QUEUES PADDLE_VL_VL_REC_MAX_CONCURRENCY PADDLE_VL_MAX_PAGES_PER_BATCH PADDLE_VL_DOWNLOAD_WORKERS PADDLE_VL_CPU_THREADS
+export PADDLE_VL_WORKER_CONCURRENCY PADDLE_VL_MAX_PAGES_PER_BATCH PADDLE_VL_VL_REC_MAX_CONCURRENCY PADDLE_VL_USE_QUEUES PADDLE_VL_DOWNLOAD_WORKERS PADDLE_VL_SERIALIZE CV_DEVICE PADDLE_VL_CPU_THREADS
 
-echo "[start.sh] Settings: PADDLE_VL_SERIALIZE=${PADDLE_VL_SERIALIZE}, CV_DEVICE=${CV_DEVICE}, PADDLE_VL_CPU_THREADS=${PADDLE_VL_CPU_THREADS}, PADDLE_VL_MAX_PAGES_PER_BATCH=${PADDLE_VL_MAX_PAGES_PER_BATCH}, PADDLE_VL_USE_QUEUES=${PADDLE_VL_USE_QUEUES}, PADDLE_VL_VL_REC_MAX_CONCURRENCY=${PADDLE_VL_VL_REC_MAX_CONCURRENCY}, PADDLE_VL_DOWNLOAD_WORKERS=${PADDLE_VL_DOWNLOAD_WORKERS}"
+echo "[start.sh] H100 Config: max_pages=${PADDLE_VL_MAX_PAGES_PER_BATCH}, vl_concurrency=${PADDLE_VL_VL_REC_MAX_CONCURRENCY}, device=${CV_DEVICE}, workers=${PADDLE_VL_WORKER_CONCURRENCY}"
 
 # Limit CPU thread oversubscription (pre/post-processing may still fan out threads under load)
 CPU_THREADS="${PADDLE_VL_CPU_THREADS}"
@@ -60,15 +63,6 @@ if [ -d "$VOLUME_PATH" ]; then
 else
   echo "[start.sh] No network volume found, using container storage"
 fi
-
-# Runtime defaults for stable single-worker behavior (H100 optimized)
-: "${PADDLE_VL_WORKER_CONCURRENCY:=1}"
-: "${PADDLE_VL_MAX_PAGES_PER_BATCH:=64}"
-: "${PADDLE_VL_VL_REC_MAX_CONCURRENCY:=64}"
-: "${PADDLE_VL_USE_QUEUES:=true}"
-: "${PADDLE_VL_DOWNLOAD_WORKERS:=20}"
-export PADDLE_VL_WORKER_CONCURRENCY PADDLE_VL_MAX_PAGES_PER_BATCH PADDLE_VL_VL_REC_MAX_CONCURRENCY PADDLE_VL_USE_QUEUES PADDLE_VL_DOWNLOAD_WORKERS
-echo "[start.sh] Runtime: worker_concurrency=${PADDLE_VL_WORKER_CONCURRENCY}, max_pages_per_batch=${PADDLE_VL_MAX_PAGES_PER_BATCH}, vl_rec_max_concurrency=${PADDLE_VL_VL_REC_MAX_CONCURRENCY}, use_queues=${PADDLE_VL_USE_QUEUES}, download_workers=${PADDLE_VL_DOWNLOAD_WORKERS}"
 
 # Create vLLM backend config file (--backend_config expects YAML file, not JSON/dict).
 # Keep hf-overrides optional; some PaddleOCR builds are strict about JSON-string typing.

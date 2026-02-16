@@ -47,6 +47,7 @@ import time
 import warnings
 from concurrent.futures import ThreadPoolExecutor
 from functools import partial
+from typing import List, Dict, Any, Optional
 
 import numpy as np
 import requests
@@ -439,6 +440,202 @@ async def process_pages_with_fallback(pipeline, temp_paths: list[str]) -> list:
     return all_results
 
 
+# ==========================================================================
+# IMAGE DETECTION AND COLLECTION
+# ==========================================================================
+
+# Maximum total size for detected images per batch (8MB safe limit)
+MAX_IMAGES_SIZE_BYTES = 8 * 1024 * 1024
+
+
+def extract_image_regions_from_result(res, original_image_path: str, page_number: int) -> List[Dict[str, Any]]:
+    """
+    Extract cropped image regions (cheques, seals, figures) from parsing_res_list.
+
+    Per PaddleOCR-VL official docs:
+    - res.img provides visualizations (marked-up images), NOT cropped regions
+    - save_to_img() saves annotated full pages, NOT individual detected images
+    - To get actual image regions, we must extract block_bbox coordinates from
+      parsing_res_list and manually crop the source image
+
+    Args:
+        res: PaddleOCR-VL result object
+        original_image_path: Path to the original input image for cropping
+        page_number: Page number (1-indexed)
+
+    Returns:
+        List of detected image dictionaries with base64-encoded cropped regions
+    """
+    detected_images: List[Dict[str, Any]] = []
+
+    try:
+        json_data = res.json
+        if not json_data or "parsing_res_list" not in json_data:
+            return detected_images
+
+        parsing_res = json_data.get("parsing_res_list", [])
+        if not parsing_res:
+            return detected_images
+
+        # Load original image for cropping
+        with Image.open(original_image_path) as orig_img:
+            # Convert to RGB if needed (for JPEG output)
+            if orig_img.mode in ('RGBA', 'P', 'LA'):
+                background = Image.new('RGB', orig_img.size, (255, 255, 255))
+                if orig_img.mode in ('RGBA', 'LA'):
+                    background.paste(orig_img, mask=orig_img.split()[-1])
+                else:
+                    background.paste(orig_img)
+                orig_img = background
+            elif orig_img.mode != 'RGB':
+                orig_img = orig_img.convert('RGB')
+
+            img_width, img_height = orig_img.size
+
+            for block_idx, block in enumerate(parsing_res):
+                label = block.get("block_label", "").lower()
+
+                # Filter for image-type blocks (not text, table, title, etc.)
+                # PaddleOCR-VL labels: image, figure, seal, stamp, chart, equation_isolated
+                if label not in ["image", "figure", "seal", "stamp", "chart"]:
+                    continue
+
+                # Get bounding box coordinates
+                # Format: [[x1,y1], [x2,y1], [x2,y2], [x1,y2]] (4-point polygon)
+                bbox = block.get("block_box", [])
+                if len(bbox) < 4:
+                    continue
+
+                # Extract coordinates (handle both list and numpy array)
+                try:
+                    x1 = int(float(bbox[0][0]))
+                    y1 = int(float(bbox[0][1]))
+                    x2 = int(float(bbox[2][0]))
+                    y2 = int(float(bbox[2][1]))
+                except (TypeError, ValueError, IndexError) as e:
+                    print(f"[PaddleOCR-VL] Page {page_number} block {block_idx}: invalid bbox {bbox}: {e}")
+                    continue
+
+                # Validate and clamp coordinates
+                x1 = max(0, min(x1, img_width - 1))
+                y1 = max(0, min(y1, img_height - 1))
+                x2 = max(x1 + 1, min(x2, img_width))
+                y2 = max(y1 + 1, min(y2, img_height))
+
+                width = x2 - x1
+                height = y2 - y1
+
+                # Skip tiny regions (likely noise)
+                if width < 20 or height < 20:
+                    continue
+
+                # Crop the region
+                try:
+                    cropped = orig_img.crop((x1, y1, x2, y2))
+                except Exception as e:
+                    print(f"[PaddleOCR-VL] Page {page_number} block {block_idx}: crop failed: {e}")
+                    continue
+
+                # Compress to JPEG
+                buffer = io.BytesIO()
+                cropped.save(buffer, format='JPEG', quality=85, optimize=True)
+                image_bytes = buffer.getvalue()
+
+                # Classify by size (area in pixels)
+                area = width * height
+                if area > 500000:
+                    img_type = "cheque"
+                elif area > 100000:
+                    img_type = "signature"
+                elif area > 10000:
+                    img_type = "stamp"
+                else:
+                    img_type = label
+
+                filename = f"page{page_number}_{label}_{x1}_{y1}_{width}_{height}.jpg"
+
+                detected_images.append({
+                    "page_number": page_number,
+                    "filename": filename,
+                    "image_base64": base64.b64encode(image_bytes).decode('utf-8'),
+                    "coordinates": {"x": x1, "y": y1, "width": width, "height": height},
+                    "image_type": img_type,
+                    "size_bytes": len(image_bytes),
+                    "block_label": label,
+                })
+
+    except Exception as e:
+        print(f"[PaddleOCR-VL] Error extracting images from page {page_number}: {e}")
+
+    return detected_images
+
+
+def collect_all_detected_images(
+    results: List,
+    temp_paths: List[str],
+    max_total_size: int = MAX_IMAGES_SIZE_BYTES
+) -> List[Dict[str, Any]]:
+    """
+    Collect detected images from all pages by extracting from parsing_res_list.
+
+    Args:
+        results: List of PaddleOCR-VL result objects (one per page)
+        temp_paths: List of temp file paths (original images)
+        max_total_size: Maximum total size for all images (default 8MB)
+
+    Returns:
+        List of detected image dictionaries with base64-encoded data
+    """
+    all_images: List[Dict[str, Any]] = []
+
+    for i, res in enumerate(results):
+        if res is None:
+            continue
+
+        page_number = i + 1
+        if i < len(temp_paths):
+            page_images = extract_image_regions_from_result(res, temp_paths[i], page_number)
+            if page_images:
+                all_images.extend(page_images)
+                print(f"[PaddleOCR-VL] Page {page_number}: extracted {len(page_images)} image region(s)")
+
+    if not all_images:
+        return all_images
+
+    # Check total size (base64 is ~33% larger than binary)
+    total_size = sum(len(img["image_base64"]) for img in all_images)
+
+    if total_size <= max_total_size:
+        print(f"[PaddleOCR-VL] All {len(all_images)} images fit ({total_size / 1024 / 1024:.2f}MB)")
+        return all_images
+
+    # If over limit, re-compress with more aggressive settings
+    print(f"[PaddleOCR-VL] {total_size / 1024 / 1024:.2f}MB exceeds limit, re-compressing...")
+
+    compressed_images: List[Dict[str, Any]] = []
+    for img in all_images:
+        try:
+            # Decode, re-compress with lower quality
+            image_bytes = base64.b64decode(img["image_base64"])
+            with Image.open(io.BytesIO(image_bytes)) as pil_img:
+                buffer = io.BytesIO()
+                pil_img.save(buffer, format='JPEG', quality=60, optimize=True)
+                new_bytes = buffer.getvalue()
+
+            compressed_images.append({
+                **img,
+                "image_base64": base64.b64encode(new_bytes).decode('utf-8'),
+                "size_bytes": len(new_bytes),
+            })
+        except Exception as e:
+            print(f"[PaddleOCR-VL] Failed to re-compress {img.get('filename')}: {e}")
+
+    total_size = sum(len(img["image_base64"]) for img in compressed_images)
+    print(f"[PaddleOCR-VL] After re-compression: {len(compressed_images)} images ({total_size / 1024 / 1024:.2f}MB)")
+
+    return compressed_images
+
+
 async def handler(event):
     """RunPod serverless handler (async, concurrent-capable)."""
     start_time = time.time()
@@ -468,6 +665,7 @@ async def handler(event):
             }
 
         skip_resize = job_input.get("skip_resize", False)
+        return_detected_images = job_input.get("return_detected_images", False)
         # NOTE: Preprocessing (orientation + UVDoc) is now done on the backend server
         # RunPod receives already-preprocessed images and only runs VLM inference
 
@@ -599,6 +797,18 @@ async def handler(event):
                         "keeping original results for collapsed pages"
                     )
 
+            # Collect detected images from parsing_res_list (if requested)
+            # NOTE: PaddleOCR-VL does NOT auto-save cropped regions to imgs/ folder
+            # res.img and save_to_img() only provide visualization images (full page with boxes)
+            # We must extract block_bbox coordinates from parsing_res_list and crop manually
+            detected_images = []
+            if return_detected_images:
+                detected_images = collect_all_detected_images(results, temp_paths)
+                if detected_images:
+                    print(f"[PaddleOCR-VL] Collected {len(detected_images)} detected images from parsing_res_list")
+                else:
+                    print("[PaddleOCR-VL] No image regions found in parsing_res_list")
+
         finally:
             # Cleanup all temp files (processed + original if preprocessing was used)
             all_cleanup_paths = set(temp_paths) | set(original_temp_paths)
@@ -611,13 +821,19 @@ async def handler(event):
 
         processing_time = int((time.time() - start_time) * 1000)
 
+        result_data = {
+            "pages": pages,
+            "ocrProvider": "paddleocr-vl-vllm",
+            "processingTime": processing_time,
+        }
+
+        # Include detected images if any were collected
+        if detected_images:
+            result_data["detected_images"] = detected_images
+
         return {
             "status": "success",
-            "result": {
-                "pages": pages,
-                "ocrProvider": "paddleocr-vl-vllm",
-                "processingTime": processing_time,
-            },
+            "result": result_data,
         }
 
     except Exception as e:

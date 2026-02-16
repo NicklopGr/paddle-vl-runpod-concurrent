@@ -2,10 +2,10 @@
 
 Pipeline:
 1. PP-LCNet (Orientation) - Auto-detects and corrects 0°/90°/180°/270° rotation
-2. PP-DocLayoutV3 (Layout Analysis) - Detects 25 element categories with reading order
-3. PaddleOCR-VL-1.5-0.9B via vLLM server (continuous batching, Flash Attention)
-4. Post-processing - Outputs structured markdown with HTML tables
-5. UVDoc (Fallback) - Re-processes pages with collapsed table rows using doc unwarping
+2. UVDoc (Always On) - Neural grid-based document unwarping (SIGGRAPH Asia 2023)
+3. PP-DocLayoutV3 (Layout Analysis) - Detects 25 element categories with reading order
+4. PaddleOCR-VL-1.5-0.9B via vLLM server (continuous batching, Flash Attention)
+5. Post-processing - Outputs structured markdown with HTML tables
 
 Architecture:
   - vLLM serves PaddleOCR-VL-1.5-0.9B on localhost:8080 (started by start.sh)
@@ -396,11 +396,11 @@ async def process_pages_with_fallback(pipeline, temp_paths: list[str]) -> list:
         batch_size = len(batch_paths)
         batch_label = f"batch {batch_idx + 1}/{len(batches)}" if len(batches) > 1 else "batch"
 
-        # Try batch processing
+        # Try batch processing (orientation + UVDoc always on)
         try:
             predict_start = time.time()
-            print(f"[PaddleOCR-VL] Processing {batch_label}: {batch_size} page(s)")
-            results = await process_batch_async(pipeline, batch_paths, use_orientation=True, use_unwarping=False)
+            print(f"[PaddleOCR-VL] Processing {batch_label}: {batch_size} page(s) (orientation + UVDoc)")
+            results = await process_batch_async(pipeline, batch_paths, use_orientation=True, use_unwarping=True)
             predict_time = time.time() - predict_start
             print(f"[PaddleOCR-VL] {batch_label.capitalize()} completed in {predict_time:.2f}s")
 
@@ -411,12 +411,12 @@ async def process_pages_with_fallback(pipeline, temp_paths: list[str]) -> list:
         except Exception as e:
             print(f"[PaddleOCR-VL] {batch_label.capitalize()} failed: {e}")
 
-        # Retry batch once
+        # Retry batch once (orientation + UVDoc always on)
         try:
             print(f"[PaddleOCR-VL] {batch_label.capitalize()} failed, retrying entire batch")
             await asyncio.sleep(1)
             retry_start = time.time()
-            results = await process_batch_async(pipeline, batch_paths, use_orientation=True, use_unwarping=False)
+            results = await process_batch_async(pipeline, batch_paths, use_orientation=True, use_unwarping=True)
             retry_time = time.time() - retry_start
             print(f"[PaddleOCR-VL] {batch_label.capitalize()} retry completed in {retry_time:.2f}s")
 
@@ -427,12 +427,12 @@ async def process_pages_with_fallback(pipeline, temp_paths: list[str]) -> list:
         except Exception as e:
             print(f"[PaddleOCR-VL] {batch_label.capitalize()} retry also failed: {e}")
 
-        # Fallback to page-by-page
+        # Fallback to page-by-page (orientation + UVDoc always on)
         print(f"[PaddleOCR-VL] Falling back to page-by-page for {batch_label} ({batch_size} page(s))")
         for i, path in enumerate(batch_paths):
             page_num = start_idx + i + 1
             try:
-                single_results = await process_batch_async(pipeline, [path], use_orientation=True, use_unwarping=False)
+                single_results = await process_batch_async(pipeline, [path], use_orientation=True, use_unwarping=True)
                 all_results[start_idx + i] = single_results[0] if single_results else None
             except Exception as e:
                 print(f"[PaddleOCR-VL] Page {page_num} failed: {e}")
@@ -748,13 +748,14 @@ async def handler(event):
 
                 pages.append(page_result)
 
-            # Pass 2: Retry collapsed pages WITH doc unwarping
+            # Pass 2: Retry collapsed pages (UVDoc already ran but may have failed on these)
             # UVDoc can crash with "cv worker: std::exception" on certain images
             # See: https://github.com/PaddlePaddle/PaddleOCR/issues/17206
+            # Retry gives these pages another chance
             if collapsed_indices:
                 print(
                     f"[PaddleOCR-VL] {len(collapsed_indices)} collapsed page(s) detected: "
-                    f"{[i + 1 for i in collapsed_indices]}, retrying with doc unwarping"
+                    f"{[i + 1 for i in collapsed_indices]}, retrying"
                 )
                 retry_paths = [temp_paths[i] for i in collapsed_indices]
 
@@ -770,7 +771,7 @@ async def handler(event):
                         )
                         retry_time = time.time() - retry_start
                         print(
-                            f"[PaddleOCR-VL] Doc unwarping retry completed in {retry_time:.2f}s for "
+                            f"[PaddleOCR-VL] Collapsed page retry completed in {retry_time:.2f}s for "
                             f"{len(retry_paths)} page(s) (attempt {attempt})"
                         )
 
@@ -786,15 +787,15 @@ async def handler(event):
                         break
 
                     except Exception as e:
-                        print(f"[PaddleOCR-VL] Doc unwarping attempt {attempt} failed: {e}")
+                        print(f"[PaddleOCR-VL] Collapsed page retry attempt {attempt} failed: {e}")
                         if attempt < 2:
-                            print("[PaddleOCR-VL] Retrying doc unwarping...")
+                            print("[PaddleOCR-VL] Retrying collapsed pages...")
                             await asyncio.sleep(1)
 
                 if not retry_success:
                     print(
-                        "[PaddleOCR-VL] Doc unwarping failed after 2 attempts, "
-                        "keeping original results for collapsed pages"
+                        "[PaddleOCR-VL] Collapsed page retry failed after 2 attempts, "
+                        "keeping original results"
                     )
 
             # Collect detected images from parsing_res_list (if requested)
